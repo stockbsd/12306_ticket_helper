@@ -12,7 +12,7 @@
 // @require			http://lib.sinaapp.com/js/jquery/1.8.3/jquery.min.js
 // @icon			http://www.12306.cn/mormhweb/images/favicon.ico
 // @run-at			document-idle
-// @version 		4.3.1
+// @version 		4.3.2
 // @updateURL		http://static.liebao.cn/_softdownload/12306_ticket_helper.user.js
 // @supportURL		http://www.fishlee.net/soft/44/
 // @homepage		http://www.fishlee.net/soft/44/
@@ -22,9 +22,10 @@
 
 //=======START=======
 
-var version = "4.3.1";
+var version = "4.3.2";
 var updates = [
-	"更新了什么？你懂的"
+	"为了保证大家订票安全，临时和谐了所有和提交订单有关系的功能",
+	"其它更新了什么？你懂的"
 ];
 
 var faqUrl = "http://www.fishlee.net/soft/44/faq.html";
@@ -196,10 +197,14 @@ function injectDom() {
 		}
 	});
 	$("#unReg, a.reSignHelper").live("click", function () {
+		if (utility.regInfo.result == 0) {
 		if (!confirm("确定要重新注册吗?")) return;
 
 		utility.setSnInfo("", "");
 		utility.getTopWindow().location.reload();
+		} else {
+			utility.getTopWindow().utility.showOptionDialog("tabReg");
+		}
 	});
 
 	//初始化设置
@@ -262,11 +267,11 @@ function injectDom() {
 	} else {
 		opt.find(".regTable").show();
 
-		if (location.pathname == "/otsweb/" || location.pathname == "/otsweb/main.jsp") {
-			alert("为了阻止地球人趁火打劫然后拿着老衲免费奉献的东东去卖钱，贫僧斗胆麻烦客官……啊不，施主注册下下，一下子就好了啦！");
-			window.open("http://www.fishlee.net/Apps/Cn12306/GetNormalRegKey");
-			utility.showOptionDialog("tabReg");
-		}
+		//if (location.pathname == "/otsweb/" || location.pathname == "/otsweb/main.jsp") {
+		//	alert("为了阻止地球人趁火打劫然后拿着老衲免费奉献的东东去卖钱，贫僧斗胆麻烦客官……啊不，施主注册下下，一下子就好了啦！");
+		//	window.open("http://www.fishlee.net/Apps/Cn12306/GetNormalRegKey");
+		//	utility.showOptionDialog("tabReg");
+		//}
 	}
 	utility.regInfo = result;
 }
@@ -705,37 +710,29 @@ var utility = {
 		utility.addCookie("helper.regSn", sn, 999);
 	},
 	verifySn: function (skipTimeVerify, name, sn) {
-		name = "mbin";
-		sn = "mbin";
-		//if (!name && sn) return utility.verifySn2(skipTimeVerify, sn);
-		//if (!name || !sn) return { result: -4, msg: "未注册" };
+		name = name || utility.getPref("helper.regUser") || utility.getCookie("helper.regUser");
+		sn = sn || utility.getPref("helper.regSn") || utility.getCookie("helper.regSn");
+		if (!name && sn) return utility.verifySn2(skipTimeVerify, sn);
+		if (!name || !sn) return { result: -4, msg: "未注册", name: "订票助手用户", typeDesc: "正式版" };
 
-		//utility.setSnInfo(name, sn);
+		utility.setSnInfo(name, sn);
 
-		//var args = sn.split(',');
-		//if (!skipTimeVerify) {
-		//	if ((new Date() - args[0]) / 60000 > 5) {
-		//		return { result: -1, msg: "序列号注册已失效" };
-		//	}
-		//}
-		//var agent = navigator.userAgent;
-		//var key = 0;
-		//for (var i = 0; i < agent.length; i++) {
-		//	key = (key + agent.charCodeAt(i)) % 7;
-		//}
-		//if (key != parseInt(args[1])) {
-		//	return { result: -2, msg: "内部错误" };
-		//}
-		//var dec = [];
-		//var encKey = args[0] + args[1];
-		//var j = 0;
-		//for (var i = 0; i < args[2].length; i += 4) {
-		//	dec.push(String.fromCharCode(parseInt(args[2].substr(i, 4), 16) ^ encKey.charCodeAt(j)));
-		//	j++;
-		//	if (j >= encKey.length) j = 0;
-		//}
-		var data;
-		data = { result: null, type: "NRML", name: "mbin" };
+		var args = sn.split(',');
+		if (!skipTimeVerify) {
+			if ((new Date() - args[0]) / 60000 > 5) {
+				return { result: -1, msg: "序列号注册已失效" };
+			}
+		}
+		var dec = [];
+		var encKey = args[0] + args[1];
+		var j = 0;
+		for (var i = 0; i < args[2].length; i += 4) {
+			dec.push(String.fromCharCode(parseInt(args[2].substr(i, 4), 16) ^ encKey.charCodeAt(j)));
+			j++;
+			if (j >= encKey.length) j = 0;
+		}
+		var data = dec.join("");
+		data = { result: null, type: data.substring(0, 4), name: data.substring(4) };
 		data.result = data.name == name ? 0 : -3;
 		data.msg = data.result == 0 ? "成功验证" : "注册无效"
 		data.typeDesc = data.type == "NRML" ? "正式版" : (data.type == "GROP" ? "内部版, <span style='color:blue;'>感谢您参与我们之中</span>!" : "<span style='color:red;'>捐助版, 非常感谢您的支持</span>!");
@@ -1066,7 +1063,7 @@ function entryPoint() {
 
 	utility.regInfo = utility.verifySn(true);
 	if (utility.regInfo.result != 0) {
-		return;
+		//return;
 	}
 
 	//
@@ -1075,7 +1072,7 @@ function entryPoint() {
 		//登录页
 		unsafeInvoke(initLogin);
 	}
-	if (utility.regInfo.bindAcc && localStorage.getItem("_sessionuser") && utility.regInfo.bindAcc.length > 0 && utility.regInfo.bindAcc[0] && utility.regInfo.bindAcc[0] != "*") {
+	if (false && utility.regInfo.bindAcc && localStorage.getItem("_sessionuser") && utility.regInfo.bindAcc.length > 0 && utility.regInfo.bindAcc[0] && utility.regInfo.bindAcc[0] != "*") {
 		var user = localStorage.getItem("_sessionuser");
 		var ok = false;
 		for (var i = 0; i < utility.regInfo.bindAcc.length; i++) {
@@ -1178,6 +1175,7 @@ function storePasToLocal() {
 //#region 未完成订单查询页面
 
 function initNotCompleteOrderPage() {
+	return;
 	//处理显示时间的
 	(function () {
 		var tagInputs = $("input[name=cache_tour_flag]");
@@ -1571,7 +1569,7 @@ function initAutoCommitOrder() {
 	}
 
 
-	$("div.tj_btn").append("<button class='long_button_u_down' type='button' id='btnAutoSubmit'>自动提交</button> <button class='long_button_u_down' type='button' id='btnCancelAuto' style='display:none;'>取消自动</button>");
+	//$("div.tj_btn").append("<button class='long_button_u_down' type='button' id='btnAutoSubmit'>自动提交</button> <button class='long_button_u_down' type='button' id='btnCancelAuto' style='display:none;'>取消自动</button>");
 	$("#btnAutoSubmit").click(function () {
 		count = 0;
 		breakFlag = 0;
@@ -1584,6 +1582,7 @@ function initAutoCommitOrder() {
 		submitFlag = false;
 	});
 	randEl.keyup(function (e) {
+		return;
 		if (document.getElementById("autoStartCommit").checked && !breakFlag) {
 			if (e.charCode == 13 || randEl.val().length == 4) submitForm();
 		}
@@ -1597,10 +1596,10 @@ function initAutoCommitOrder() {
 	}
 
 	//进度提示框
-	$("table.table_qr tr:last").before("<tr style='display:none;'><td style='border-top:1px dotted #ccc;height:100px;' colspan='9' id='orderCountCell'></td></tr><tr><td style='border-top:1px dotted #ccc;' colspan='9'><ul id='tipScript'>" +
-	"<li class='fish_clock' id='countEle' style='font-weight:bold;'>等待操作</li>" +
-	"<li style='color:green;'><strong>操作信息</strong>：<span>休息中</span></li>" +
-	"<li style='color:green;'><strong>最后操作时间</strong>：<span>--</span></li></ul></td></tr>");
+	//$("table.table_qr tr:last").before("<tr style='display:none;'><td style='border-top:1px dotted #ccc;height:100px;' colspan='9' id='orderCountCell'></td></tr><tr><td style='border-top:1px dotted #ccc;' colspan='9'><ul id='tipScript'>" +
+	//"<li class='fish_clock' id='countEle' style='font-weight:bold;'>等待操作</li>" +
+	//"<li style='color:green;'><strong>操作信息</strong>：<span>休息中</span></li>" +
+	//"<li style='color:green;'><strong>最后操作时间</strong>：<span>--</span></li></ul></td></tr>");
 
 	var tip = $("#tipScript li");
 	var errorCount = 0;
@@ -1617,7 +1616,7 @@ function initAutoCommitOrder() {
 	}
 
 	//提交频率差别
-	$(".table_qr tr:last").before("<tr><td colspan='9'>自动提交失败时休息时间：<input type='text' size='4' class='input_20txt' style='text-align:center;' value='3' id='pauseTime' />秒 (不得低于1)  <label><input type='checkbox' id='autoStartCommit' /> 输入验证码后立刻开始自动提交</label> <label><input type='checkbox' id='showHelp' /> 显示帮助</label></td></tr>");
+	$(".table_qr tr:last").before("<tr><td colspan='9'><span style='display:none;'>自动提交失败时休息时间：<input type='text' size='4' class='input_20txt' style='text-align:center;' value='3' id='pauseTime' />秒 (不得低于1)  <label><input type='checkbox' id='autoStartCommit' /> 输入验证码后立刻开始自动提交</label></span> <label><input type='checkbox' id='showHelp' /> 显示帮助</label></td></tr>");
 	document.getElementById("autoStartCommit").checked = typeof (window.localStorage["disableAutoStartCommit"]) == 'undefined';
 	document.getElementById("showHelp").checked = typeof (window.localStorage["showHelp"]) != 'undefined';
 	$("#autoStartCommit").change(function () {
@@ -1958,7 +1957,7 @@ function initTicketQuery() {
 <tr class='fish_sep musicFunc'><td class='name'>可用音乐地址</td><td colspan='3'>");
 
 	var host1 = "http://static.liebao.cn/resources/audio/";
-	//var host2 = "https://github.com/mbin/12306_ticket_helper/raw/master/res/";
+	//var host2 = "https://github.com/iccfish/12306_ticket_helper/raw/master/res/";
 	var musics = [["music1.ogg", "超级玛丽"], ["music2.ogg", "蓝精灵"]];
 	$.each(musics, function () {
 		extrahtml.push("<a href='javascript:;' url='" + host1 + this[0] + "' class='murl'>" + this[1] + "</a>&nbsp;&nbsp;&nbsp;&nbsp;");
@@ -3118,7 +3117,7 @@ function initTicketQuery() {
 //#region 自动提交订单
 
 function initDirectSubmitOrder() {
-	//return;
+	return;
 	//if (Math.random() > 0.10) return;
 
 	console.log("[INFO] initialize direct submit order.");
@@ -3654,12 +3653,12 @@ function initLogin() {
 	function relogin() {
 		if (inRunning) return;
 
-		var user = $("#UserName").val();
-		if (!user) return;
-		if (utility.regInfo.bindAcc && utility.regInfo.bindAcc.length && utility.regInfo.bindAcc[0] && $.inArray(user, utility.regInfo.bindAcc) == -1 && utility.regInfo.bindAcc[0] != "*") {
-			alert("很抱歉，12306订票助手的授权许可已绑定至【" + utility.regInfo.bindAcc.join() + "】，未授权用户，助手停止运行，请手动操作。\n您可以在登录页面下方的帮助区点击【重新注册】来修改绑定。");
-			return;
-		}
+		//var user = $("#UserName").val();
+		//if (!user) return;
+		//if (utility.regInfo.bindAcc && utility.regInfo.bindAcc.length && utility.regInfo.bindAcc[0] && $.inArray(user, utility.regInfo.bindAcc) == -1 && utility.regInfo.bindAcc[0] != "*") {
+		//	alert("很抱歉，12306订票助手的授权许可已绑定至【" + utility.regInfo.bindAcc.join() + "】，未授权用户，助手停止运行，请手动操作。\n您可以在登录页面下方的帮助区点击【重新注册】来修改绑定。");
+		//	return;
+		//}
 
 		count++;
 		utility.setPref("_sessionuser", $("#UserName").val());
