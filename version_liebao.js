@@ -1,6 +1,7 @@
-var version_12306_helper = "4.6.1";
+var version_12306_helper = "4.9.5";
 var version_updater = [
-	"常规性修改。祝你春节快乐……"
+	"* 修正常用联系人等页面出现显示不出界面的BUG",
+	"* 为出发时间和到达时间添加选项开关"
 ];
 var fishlee12306_msgid=17;
 var fishlee12306_msgver="4.6.2";
