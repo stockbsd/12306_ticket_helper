@@ -2,18 +2,17 @@
 // ==UserScript==
 // @name 			12306.CN 订票助手 For Firefox&Chrome
 // @namespace		http://www.u-tide.com/fish/
-// @author			iFish@FishLee.net <ifish@fishlee.net> http://www.fishlle.net/
+// @author			iFish@FishLee.net <ifish@fishlee.net> http://www.fishlee.net/
 // @developer		iFish
 // @contributor		
 // @description		帮你订票的小助手 :-)
 // @match			http://dynamic.12306.cn/otsweb/*
 // @match			https://dynamic.12306.cn/otsweb/*
 // @match			https://www.12306.cn/otsweb/*
-// @require			http://lib.sinaapp.com/js/jquery/1.8.3/jquery.min.js
 // @icon			http://www.12306.cn/mormhweb/images/favicon.ico
 // @run-at			document-idle
-// @version 		4.3.1
-// @updateURL		http://static.liebao.cn/_softdownload/12306_ticket_helper.user.js
+// @version 		4.9.5
+// @updateURL		http://static.fishlee.net/_softdownload/12306_ticket_helper.user.js
 // @supportURL		http://www.fishlee.net/soft/44/
 // @homepage		http://www.fishlee.net/soft/44/
 // @contributionURL	https://me.alipay.com/imfish
@@ -22,14 +21,16 @@
 
 //=======START=======
 
-var version = "4.3.1";
+var version = "4.9.5";
 var updates = [
-	"更新了什么？你懂的"
+	"* 修正常用联系人等页面出现显示不出界面的BUG",
+	"* 为出发时间和到达时间添加选项开关"
 ];
 
 var faqUrl = "http://www.fishlee.net/soft/44/faq.html";
 //标记
 var utility_emabed = false;
+var compVersion = "5.72";
 
 
 //#region -----------------UI界面--------------------------
@@ -45,49 +46,69 @@ function injectStyle() {
 	var s = document.createElement("style");
 	s.id = "12306_ticket_helper";
 	s.type = "text/css";
-	s.textContent = ".fish_running, .fish_clock, .fish_error, .fish_ok {\
-	line-height:20px;\
-	text-indent:18px;\
-	background-repeat:no-repeat;\
-	background-position:2px 50%;\
-	font-size:12px;\
-	}\
-	.fish_running{background-image:url(data:image/gif;base64,R0lGODlhEAAQALMPAHp6evf394qKiry8vJOTk83NzYKCgubm5t7e3qysrMXFxe7u7pubm7S0tKOjo////yH/C05FVFNDQVBFMi4wAwEAAAAh+QQJCAAPACwAAAAAEAAQAAAETPDJSau9NRDAgWxDYGmdZADCkQnlU7CCOA3oNgXsQG2FRhUAAoWDIU6MGeSDR0m4ghRa7JjIUXCogqQzpRxYhi2HILsOGuJxGcNuTyIAIfkECQgADwAsAAAAABAAEAAABGLwSXmMmjhLAQjSWDAYQHmAz8GVQPIESxZwggIYS0AIATYAvAdh8OIQJwRAQbJkdjAlUCA6KfU0VEmyGWgWnpNfcEAoAo6SmWtBUtCuk9gjwQKeQAeWYQAHIZICKBoKBncTEQAh+QQJCAAPACwAAAAAEAAQAAAEWvDJORejGCtQsgwDAQAGGWSHMK7jgAWq0CGj0VEDIJxPnvAU0a13eAQKrsnI81gqAZ6AUzIonA7JRwFAyAQSgCQsjCmUAIhjDEhlrQTFV+lMGLApWwUzw1jsIwAh+QQJCAAPACwAAAAAEAAQAAAETvDJSau9L4QaBgEAMWgEQh0CqALCZ0pBKhRSkYLvM7Ab/OGThoE2+QExyAdiuexhVglKwdCgqKKTGGBgBc00Np7VcVsJDpVo5ydyJt/wCAAh+QQJCAAPACwAAAAAEAAQAAAEWvDJSau9OAwCABnBtQhdCQjHlQhFWJBCOKWPLAXk8KQIkCwWBcAgMDw4Q5CkgOwohCVCYTIwdAgPolVhWSQAiN1jcLLVQrQbrBV4EcySA8l0Alo0yA8cw+9TIgAh+QQFCAAPACwAAAAAEAAQAAAEWvDJSau9WA4AyAhWMChPwXHCQRUGYARgKQBCzJxAQgXzIC2KFkc1MREoHMTAhwQ0Y5oBgkMhAAqUw8mgWGho0EcCx5DwaAUQrGXATg6zE7bwCQ2sAGZmz7dEAAA7); color: green;}\
-	.fish_clock{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAG/SURBVHjapJM/S8NQFMVvpaVfoEKojWL9U3DLIqjoooJDu/sFmnQoiIujQz+Aix3a1FUQXIR2UFA6+WeRUhBprERroGTopg6lSeo7iY1pq4sNHPpy3+8c7n0v9XW7XRrl8SFAlmVvbYFpmynOJHzXKkwlphOmxx4oiiL5sbAsi1KpFOVyuWQwGMzEYjEuGo0Sx3E2qOu6oKqqoChKst1u7zO2wNifDrLZLNbJUCgkLy2vEM/zv7araRrd3lxTq9US2WshnU7TGDZM01zwBwKZxaVlCkd4MtmxQDXlyVbvHXtgwMIDrx3Q6XS2Z2bnufDEJJkWuWIt2/LWwICFxw0wDCM+PTPXB0K4IGiwDhYeeP3fHQjjXIQMq3/mev3J/l0fqIOFxxtAxi+fg/rsBOztSE7QVpwpQT2PN6Dy1mgIYX7KNZcvipQ5yA+Fosum1rA93jMo1R6q7oxX50Va20wMzd4TWHi8t3BSvb/T1bpz4qsbf5vBgIXHDWB3+vj58b5fPj9jc9fcex8U9sCAhcc7Au1mDgtN7VU8Oz7SL0un9PbyTBYzQVijhj0wYOFxP2VJkv71Z8rn807AKM+XAAMArp1CsEFrDIIAAAAASUVORK5CYII=); color: blue;}\
-	.fish_error{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAJFSURBVHjapJO/T1pRFMe/Dx7ypEXri4lUGUhsHF40hODSpQ61cTH+2HSoZaF1dHSxpU7+Ca04NE7dyuBiapcuLFokTdD4A01awNdBSkAf8ut5zhUoxq3e5OS+nPv5nnvuyfdJpmniPksSBd68aM1pFDMU4xS+ei5GsUHxmSLRJD9+hcx7rVqFZWwMtc3NIGy2Zam31yX19ABdXTdgNuszdd1nptNBlMtviQ0TC0ujg1LgGWNByelctQ4M4G8qhfN4HLmDA6HvpJzq9eJRXx+qlDPz+deUDrd9+i6KoFouazVg2erx4M/uLn5FItGLk5NX/qUliYO+I2o2C4vLBWaYZQ1rRYFyqTQDVXXl02mcb29HbXb7S+/CwjqKRSAaDXlHRqYwOoqdxUUww6zQNApUSqVxuaMDF8kk2hTlgxYIHMMwaHSxEB2/a4g7u7sjzDDLmn8dXF35ZJsNVWrzycTEOtxuYH//lpjWezqbZoZZ1rQ+AXyj3eEQO7a27oj9s7OhVkZoWjqIFXUdD1QVub29L3fEk5MhXF7y2RwzzLKmdQYb+UwGiqLwO6duiVdWxM2GrvfTfOaZYZY1TScmvE7NKsvf3B6PyzE8jB9ra6DJR2TTnBYXSNIcbfN021Mjl8Pv09OzaqXyXIvnE6LAT00RRlLa21cfk1kesgNpULBab5xITiUHokADzJDJioYhjDSUKNafUKlgaHAwXCCHJQ8Pz1JHRyhQm2RhEfzNOT5jhlnWNJ+w0y/918/kPzbrf+M91rUAAwCuQDz94e2kLwAAAABJRU5ErkJggg==); color: blue;}\
-	.fish_ok{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAHsSURBVHjapFNBSBtBFH2xgoqmKipEC6XkYqhUWXOxUAQhpyJ4Wgi0l0rNsdBbL/WgF2/eV8hNSBF68uhFkOrFhCAGS8mWgmYjG9lCKVGTuP1vsrvuIac68HZm/n/vz5/9fyKu6+IhI8IA5k4kbHsuSAsWBZpnKwh2BTlBySfGdTmcAX7kOJc5r5hfhyw7/86t21/EVVbgmjb6yPG4SqsyONtWGaz0Dk8aYzMf0R+b65ju3+oR7OImrp3vGdluJd646KKj1ZK0H0XXRqfeo390Emg6HUEfOeQqjQwVoNFAOvpkPjYw8kw2NRgfFtQchm8jh1xqggDNJhYHY3Jy41IhmXodrDvZyKWG2m4vA23gcR9wa6m7Jue1YO2PsI1casIB5GPBWM8ilZLyvFzu+BPNwyz29oDM5+W2JhSg8NsqaRSTMHycxfg4MDHRJlUqgCWHO/IvyRGu0gQB5D671Z+mlpiZFXEejjSInrw/OS4wjiWwNFx8ehZnRVNpwlXI/SrXqvbFOfS3TxWRAtNpwxfTRw651AQZSE1Lrfrd6mmhZky96IGejuJgX5rL9HpbrvBKbHbFxunJDa6F67e0X0YsLWHr6uouc/StXi3m/yCRkNTjbXBNG33kkEtN8Jh2Pv3fY9I3vLfwkPFPgAEApRUigcIVl3AAAAAASUVORK5CYII=); color: purple;}\
-	 .outerbox{border:5px solid #EAE3F7;}\
-	.box{border:1px solid #6E41C2;color:#444;margin:auto;}\
-	.box .title{padding:5px;line-height:20px;background-color:#B59DE2;color:#fff;}\
-	.box .title a {color:white;}\
-	.box .content{padding:5px;background-color:#fff;}\
-	.box table{border-collapse:collapse; width:98%;}\
-	.box table td{padding:5px;}\
-	.box input[type=button],.fish_button {padding:5px;}\
-	.box .name ,.box .caption,.box .caption td { background-color:#EAE3F7; font-weight:bold;-webkit-transition:all linear 0.2s;-moz-transition:all linear 0.2s;}\
-	.fish_sep td {border-top:1px solid #A688DD;}\
-	.lineButton { cursor:pointer; border: 1px solid green; border-radius:3px; font-size:12px; line-height: 16px; padding:3px; backround-color: lightgreen; color: green;-webkit-transition:all linear 0.2s;-moz-transition:all linear 0.2s;}\
-	.lineButton:hover { color: white; background-color: green;-webkit-transition:all linear 0.1s;-moz-transition:all linear 0.1s; }\
-.fishTab {border: 5px solid #E5D9EC;font-size: 12px;}\
-.fishTab .innerTab {border-width: 1px;border-style: solid;border-color: #C7AED5;background-color: #fff;}\
-.fishTab .tabNav {font-weight:bold;color:#F5F1F8;background-color: #C7AED5;line-height:25px;overflow:hidden;margin:0px;padding:0px;}\
-.fishTab .tabNav li {float:left;list-style:none;cursor:pointer;padding-left: 20px;padding-right: 20px;}\
-.fishTab .tabNav li:hover {background-color:#DACAE3;}\
-.fishTab .tabNav li.current {background-color:#fff;color: #000;}\
-.fishTab .tabContent {padding:5px;display:none;}\
-.fishTab .tabContent p{margin:10px 0px 10px 0px;}\
-.fishTab div.current {display:block;}\
-.fishTab div.control {text-align:center;line-height:25px;background-color:#F0EAF4;}\
-.fishTab input[type=button] { padding: 5px; }\
-.hide {display:none;}\
-.fish_button {background-color:#7077DA;font-size:12px; font-family:微软雅黑; color:#fff; border: 1px solid #7077DA;margin-left:5px;margin-right:5px;-webkit-transition:all linear 0.2s;-moz-transition:all linear 0.2s;border-radius:3px;font-size:12px;}\
-.fish_button:hover{background:#fff;color:#7077DA;-webkit-transition:all linear 0.1s;-moz-transition:all linear 0.1s;cursor:pointer;}\
-tr.steps td{background-color:#E8B7C2!important;-webkit-transition:all linear 0.1s;-moz-transition:all linear 0.1s;}\
-tr.stepsok td{background-color:#BDE5BD!important;-webkit-transition:all linear 0.1s;-moz-transition:all linear 0.1s;}\
-tr.steps span.indicator {display:inline-block!important;}\
-tr.stepsok span.indicator {display:inline-block!important;}\
-.highlightrow td { background-color:#D0C0ED!important; color:red; }\
-#randCodeTxt{ font-weight: bold; font-size: 18px; text-align: center; padding: 3px 10px 3px 10px; font-family: verdana!important; text-transform: uppercase; }";
+	s.textContent = "\
+.fish_running, .fish_clock, .fish_error, .fish_ok {line-height:20px;text-indent:18px;background-repeat:no-repeat;background-position:2px 50%;font-size:12px;}\
+.fish_running{background-image:url(data:image/gif;base64,R0lGODlhEAAQALMPAHp6evf394qKiry8vJOTk83NzYKCgubm5t7e3qysrMXFxe7u7pubm7S0tKOjo////yH/C05FVFNDQVBFMi4wAwEAAAAh+QQJCAAPACwAAAAAEAAQAAAETPDJSau9NRDAgWxDYGmdZADCkQnlU7CCOA3oNgXsQG2FRhUAAoWDIU6MGeSDR0m4ghRa7JjIUXCogqQzpRxYhi2HILsOGuJxGcNuTyIAIfkECQgADwAsAAAAABAAEAAABGLwSXmMmjhLAQjSWDAYQHmAz8GVQPIESxZwggIYS0AIATYAvAdh8OIQJwRAQbJkdjAlUCA6KfU0VEmyGWgWnpNfcEAoAo6SmWtBUtCuk9gjwQKeQAeWYQAHIZICKBoKBncTEQAh+QQJCAAPACwAAAAAEAAQAAAEWvDJORejGCtQsgwDAQAGGWSHMK7jgAWq0CGj0VEDIJxPnvAU0a13eAQKrsnI81gqAZ6AUzIonA7JRwFAyAQSgCQsjCmUAIhjDEhlrQTFV+lMGLApWwUzw1jsIwAh+QQJCAAPACwAAAAAEAAQAAAETvDJSau9L4QaBgEAMWgEQh0CqALCZ0pBKhRSkYLvM7Ab/OGThoE2+QExyAdiuexhVglKwdCgqKKTGGBgBc00Np7VcVsJDpVo5ydyJt/wCAAh+QQJCAAPACwAAAAAEAAQAAAEWvDJSau9OAwCABnBtQhdCQjHlQhFWJBCOKWPLAXk8KQIkCwWBcAgMDw4Q5CkgOwohCVCYTIwdAgPolVhWSQAiN1jcLLVQrQbrBV4EcySA8l0Alo0yA8cw+9TIgAh+QQFCAAPACwAAAAAEAAQAAAEWvDJSau9WA4AyAhWMChPwXHCQRUGYARgKQBCzJxAQgXzIC2KFkc1MREoHMTAhwQ0Y5oBgkMhAAqUw8mgWGho0EcCx5DwaAUQrGXATg6zE7bwCQ2sAGZmz7dEAAA7); color: green;}\
+.fish_clock{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAG/SURBVHjapJM/S8NQFMVvpaVfoEKojWL9U3DLIqjoooJDu/sFmnQoiIujQz+Aix3a1FUQXIR2UFA6+WeRUhBprERroGTopg6lSeo7iY1pq4sNHPpy3+8c7n0v9XW7XRrl8SFAlmVvbYFpmynOJHzXKkwlphOmxx4oiiL5sbAsi1KpFOVyuWQwGMzEYjEuGo0Sx3E2qOu6oKqqoChKst1u7zO2wNifDrLZLNbJUCgkLy2vEM/zv7araRrd3lxTq9US2WshnU7TGDZM01zwBwKZxaVlCkd4MtmxQDXlyVbvHXtgwMIDrx3Q6XS2Z2bnufDEJJkWuWIt2/LWwICFxw0wDCM+PTPXB0K4IGiwDhYeeP3fHQjjXIQMq3/mev3J/l0fqIOFxxtAxi+fg/rsBOztSE7QVpwpQT2PN6Dy1mgIYX7KNZcvipQ5yA+Fosum1rA93jMo1R6q7oxX50Va20wMzd4TWHi8t3BSvb/T1bpz4qsbf5vBgIXHDWB3+vj58b5fPj9jc9fcex8U9sCAhcc7Au1mDgtN7VU8Oz7SL0un9PbyTBYzQVijhj0wYOFxP2VJkv71Z8rn807AKM+XAAMArp1CsEFrDIIAAAAASUVORK5CYII=); color: blue;}\
+.fish_error{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAJFSURBVHjapJO/T1pRFMe/Dx7ypEXri4lUGUhsHF40hODSpQ61cTH+2HSoZaF1dHSxpU7+Ca04NE7dyuBiapcuLFokTdD4A01awNdBSkAf8ut5zhUoxq3e5OS+nPv5nnvuyfdJpmniPksSBd68aM1pFDMU4xS+ei5GsUHxmSLRJD9+hcx7rVqFZWwMtc3NIGy2Zam31yX19ABdXTdgNuszdd1nptNBlMtviQ0TC0ujg1LgGWNByelctQ4M4G8qhfN4HLmDA6HvpJzq9eJRXx+qlDPz+deUDrd9+i6KoFouazVg2erx4M/uLn5FItGLk5NX/qUliYO+I2o2C4vLBWaYZQ1rRYFyqTQDVXXl02mcb29HbXb7S+/CwjqKRSAaDXlHRqYwOoqdxUUww6zQNApUSqVxuaMDF8kk2hTlgxYIHMMwaHSxEB2/a4g7u7sjzDDLmn8dXF35ZJsNVWrzycTEOtxuYH//lpjWezqbZoZZ1rQ+AXyj3eEQO7a27oj9s7OhVkZoWjqIFXUdD1QVub29L3fEk5MhXF7y2RwzzLKmdQYb+UwGiqLwO6duiVdWxM2GrvfTfOaZYZY1TScmvE7NKsvf3B6PyzE8jB9ra6DJR2TTnBYXSNIcbfN021Mjl8Pv09OzaqXyXIvnE6LAT00RRlLa21cfk1kesgNpULBab5xITiUHokADzJDJioYhjDSUKNafUKlgaHAwXCCHJQ8Pz1JHRyhQm2RhEfzNOT5jhlnWNJ+w0y/918/kPzbrf+M91rUAAwCuQDz94e2kLwAAAABJRU5ErkJggg==); color: blue;}\
+.fish_ok{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAHsSURBVHjapFNBSBtBFH2xgoqmKipEC6XkYqhUWXOxUAQhpyJ4Wgi0l0rNsdBbL/WgF2/eV8hNSBF68uhFkOrFhCAGS8mWgmYjG9lCKVGTuP1vsrvuIac68HZm/n/vz5/9fyKu6+IhI8IA5k4kbHsuSAsWBZpnKwh2BTlBySfGdTmcAX7kOJc5r5hfhyw7/86t21/EVVbgmjb6yPG4SqsyONtWGaz0Dk8aYzMf0R+b65ju3+oR7OImrp3vGdluJd646KKj1ZK0H0XXRqfeo390Emg6HUEfOeQqjQwVoNFAOvpkPjYw8kw2NRgfFtQchm8jh1xqggDNJhYHY3Jy41IhmXodrDvZyKWG2m4vA23gcR9wa6m7Jue1YO2PsI1casIB5GPBWM8ilZLyvFzu+BPNwyz29oDM5+W2JhSg8NsqaRSTMHycxfg4MDHRJlUqgCWHO/IvyRGu0gQB5D671Z+mlpiZFXEejjSInrw/OS4wjiWwNFx8ehZnRVNpwlXI/SrXqvbFOfS3TxWRAtNpwxfTRw651AQZSE1Lrfrd6mmhZky96IGejuJgX5rL9HpbrvBKbHbFxunJDa6F67e0X0YsLWHr6uouc/StXi3m/yCRkNTjbXBNG33kkEtN8Jh2Pv3fY9I3vLfwkPFPgAEApRUigcIVl3AAAAAASUVORK5CYII=); color: purple;}\
+.outerbox{font-family:'Microsoft Yahei','Apple LiGothic Medium',Arial,Helvetica,Sans-serif;color:#4c4c4c;width:100%;margin: 10px auto;}\
+.box{border:1px solid #c6c6c6;}\
+.box .title{padding:5px;line-height:23px;color:#fff;background:-webkit-linear-gradient(#707070,#2c2c2c 90%);background:-moz-linear-gradient(#707070,#2c2c2c 90%);background-color:#707070; position: relative;}\
+.box .title a{color:#fff;}\
+.box .time-comp{color:#fff;position:absolute;margin:2px;right:2px;top:2px;padding:1px 12px;border-radius:12px;text-shadow:0px 1px 2px rgba(0,0,0,0.6);box-shadow:0px 1px 1px rgba(255,255,255,0.2),inset 0px 0px 8px rgba(0,0,0,0.8);}\
+.box .content{padding:5px;background-color:#fff}\
+.box table{border-collapse:collapse;width:98%}\
+.box table td{padding:5px;}\
+.box table .tfooter{text-align:center;height:24px;background:-webkit-linear-gradient(#ffffff,#fafafa 90%);background:-moz-linear-gradient(#ffffff,#fafafa 90%);color:#707070;text-shadow:1px 1px 1px #fff,2px 2px 1px rgba(0,0,0,0.2);}\
+.box table .tfooter a{color:#707070;}\
+.box input[type=button],.fish_button{font-size:12px;font-family:'Microsoft Yahei','Apple LiGothic Medium',Arial,Helvetica,Sans-serif;padding:3px 6px;letter-spacing:1px;border-radius:3px;cursor:pointer;}\
+.box .name,.box .caption,.box .caption td{font-weight:bold;-webkit-transition:all linear 0.2s;-moz-transition:all linear 0.2s;background:-webkit-linear-gradient(#fafafa,#f0f0f0 90%);background:-moz-linear-gradient(#fafafa,#f0f0f0 90%);background-color:#fafafa;}\
+.box .lineButton{margin:4px 6px 4px 2px;}\
+.lineButton{font-family:'Microsoft Yahei','Apple LiGothic Medium',Arial,Helvetica,Sans-serif;line-height:16px;margin-right:6px;padding:2px 4px;color:#4c4c4c;backround:#f5f5f5;background:-webkit-linear-gradient(#fff,#f0f0f0);background:-moz-linear-gradient(#fff,#f0f0f0);border:1px solid #c8c8c8;border-radius:3px;box-shadow:inset 0 1px 3px rgba(255,255,255,0.2),0 0 3px rgba(0,0,0,0.2);text-shadow:.0em .1em .1em rgba(255,255,255,0.8);-webkit-transition:all linear 0.2s;-moz-transition:all linear 0.2s;cursor:pointer;}\
+.lineButton:hover{background:#f0f0f0;text-shadow:.0em .1em .1em #fff;-webkit-transition:all linear 0.1s;-moz-transition:all linear 0.1s;}\
+.lineButton:active{background:#f2f2f2;background:-webkit-gradient(linear,left bottom,left top,color-stop(0%,#f2f2f2),color-stop(90%,#f2f2f2));background:-moz-linear-gradient(center bottom,#f2f2f2 0%,#f2f2f2 100%);box-shadow:inset 0px 1px 3px #cccccc,0px 0px 0px #0968bb;border-color:#d6d6d6;border-top-color:#d0d0d0;border-left-color:#d0d0d0;border-right-color:#e2e2e2;border-bottom-color:#e2e2e2;}\
+.fishTab{border:5px solid #E5D9EC;font-size:12px;font-family:'Microsoft Yahei','Apple LiGothic Medium',Arial,Helvetica,Sans-serif;}\
+.fishTab .innerTab{border-width:1px;border-style:solid;border-color:#C7AED5;background-color:#fff}\
+.fishTab .tabNav{font-weight:bold;color:#F5F1F8;background-color:#C7AED5;line-height:25px;overflow:hidden;margin:0px;padding:0px}\
+.fishTab .tabNav li{float:left;list-style:none;cursor:pointer;padding-left:20px;padding-right:20px}\
+.fishTab .tabNav li:hover{background-color:#DACAE3}\
+.fishTab .tabNav li.current{background-color:#fff;color:#000}\
+.fishTab .tabContent{padding:5px;display:none}\
+.fishTab .tabContent p{margin:10px 0px 10px 0px}\
+.fishTab div.current{display:block}\
+.fishTab div.control{text-align:center;line-height:25px;background-color:#F0EAF4}\
+.fishTab input[type=button]{padding:5px}\
+.hide{display:none}\
+.fish_area {font-weight:bold;background: -webkit-linear-gradient(#cfcfcf 0%, #bfbfbf 50%, #b5b5b5 50%, #cacaca 100%); color: #555; text-shadow: 1px 1px 2px #ddd;}\
+.fish_area td {font-weight:bold; text-align:center;}\
+.fish_sep td{border-top:1px solid #d0d0d0;}\
+.fish_button{color:#fff;line-height:normal;margin:0 5px;background:#0f7edb;background:-webkit-linear-gradient(#0c96f8,#1960b7);background:-moz-linear-gradient(#0c96f8,#1960b7);border:1px solid #186fb7;box-shadow:inset 0 1px 3px rgba(255,255,255,0.2),0 0 3px rgba(0,0,0,0.3);text-shadow:.0em .1em .1em rgba(50,50,50,0.8);-webkit-transition:all linear 0.2s;-moz-transition:all linear 0.2s;}\
+.fish_button:hover{background:#099bff;background:-webkit-gradient(linear,left bottom,left top,color-stop(0%,#077ccc),color-stop(90%,#0abaff));background:-moz-linear-gradient(center bottom,#077ccc 0%,#0abaff 100%);border-color:#088be5;-webkit-transition:all linear 0.1s;-moz-transition:all linear 0.1s;}\
+.fish_button:active{background:#0885e7;background:-webkit-gradient(linear,left bottom,left top,color-stop(0%,#066ab8),color-stop(90%,#099fff));background:-moz-linear-gradient(center bottom,#066ab8 0%,#099fff 100%);border-color:#0777cf;box-shadow:inset 0px 1px 2px #0770c3,0px 0px 0px #000;border-top-color:#0775ca;border-left-color:#0775ca;border-right-color:#087edb;border-bottom-color:#087edb;}\
+tr.steps td{background-color:#E8B7C2!important;-webkit-transition:all linear 0.1s;-moz-transition:all linear 0.1s}\
+tr.stepsok td{background-color:#BDE5BD!important;-webkit-transition:all linear 0.1s;-moz-transition:all linear 0.1s}\
+tr.steps span.indicator{display:inline-block!important}\
+tr.stepsok span.indicator{display:inline-block!important}\
+.highlightrow td{background-color:#D0C0ED!important;color:red}\
+#randCodeTxt{font-weight:bold;font-size:18px;text-align:center;padding:3px 10px 3px 10px;font-family:verdana!important;text-transform:uppercase}\
+tr.append_row{font-family:'Microsoft Yahei','Apple LiGothic Medium',Arial,Helvetica,Sans-serif;}\
+#acathur{color:#fcfcfc;font-weight:bold;font-family:Segoe UI,Lucida Grande,Arial,Helvetica,Sans-serif;text-decoration:underline;text-shadow:0 0 1px #000,0px 0px 6px rgba(0,0,0,0.8);}\
+div.gridbox_light .odd_light,div.gridbox_light .ev_light{background:-webkit-linear-gradient(#fff,#f6f6f6);background:-moz-linear-gradient(#fff,#f6f6f6);text-shadow:.0em .1em .1em rgba(255,255,255,0.8);}\
+.validCell{ background:-webkit-linear-gradient(#e0ebff, #c7d9ff)!important; background:-moz-linear-gradient(#e0ebff, #c7d9ff)!important; color:green; }\
+.validRow{background:-webkit-linear-gradient(#ffe0e5, #ffc7d0)!important;background:-moz-linear-gradient(#ffe0e5, #ffc7d0)!important;color:#700012;}\
+.unValidRow{opacity:0.8;}\
+.unValidCell{opacity:0.8;}\
+.btn130_2 {text-shadow:none;}\
+.warning{color:red;}\
+input[type=checkbox].current{color:red;font-weight:bold;}\
+span.leftTicketStatusSpan{color:green; font-weight:bold;}\
+.gridtb { width:100%!important; }\
+.gridtb th {text-align:center;padding: 5px; border-right: 1px solid #ccc; font-weight:bold;-webkit-transition:all linear 0.2s;-moz-transition:all linear 0.2s;background:-webkit-linear-gradient(#fafafa,#f0f0f0 90%);background:-moz-linear-gradient(#fafafa,#f0f0f0 90%);background-color:#fafafa;}\
+.gridtb .last {border-right:none;}\
+.fish_opt {width:98%;padding:5px;margin:0;overflow:hidden;box-shadow:1px 1px 3px #ccc;border:1px solid #ddd;background-color:#fff;}\
+.fish_opt li{width:175px; float:left;}\
+";
 
 	document.head.appendChild(s);
 }
@@ -138,12 +159,11 @@ function injectDom() {
 	html.push('<p> 12306 订票助手是一款用于订票的助手软件，嗯……看到这里相信你已经知道它支持神马浏览器了 =。=<strong>完全免费，无需付费使用，仅接受捐助。</strong> </p>');
 	html.push('<p style="color: red;"> <strong style="font-size:16px;">啊嘞……看这里！本助手完全免费啊诸位大人！</strong>任何在第三方网站上出售的软件全他喵的是侵权出售啊！！看到的时候请亲务必记得退款退货打差评向青天大老爷举报啊！！</p>');
 	html.push('<p style="color:purple;"> 回家是一个单纯而简单的心愿，希望我们不会变得太复杂……</p>');
-	html.push('<p> 有很多朋友资助作者，正在木有暖气的南方饱受煎熬的作者感激涕零 ≥ω≤。<a href="http://www.fishlee.net/soft/44/donate.html" target="_blank">戳这里了解捐助详情</a>。 </p>');
-	html.push('<p style="color: blue;"> <strong style="">那个，诸位票贩子们，放过本助手吧！！你们都去用什么自动识别验证码的好啦！还有铁道部的爷爷们，拜托你们改进下的用户体验吧！你们的订票足够好用的话虽还来用脚本啊！！！！</strong></p>');
+	html.push('<p> 有很多朋友资助作者，正在严重返潮的南方发霉的作者感激涕零 ≥ω≤。<a href="http://www.fishlee.net/soft/44/donate.html" target="_blank">戳这里了解捐助详情</a>。 </p>');
 	html.push('<p style="font-weight:bold;">当前版本更新内容</p>');
-	html.push('<ol>');
+	html.push('<ol >');
 	$.each(utility.getPref("updates").split('\t'), function (i, n) {
-		html.push("<li style='padding-left:20px;list-style:disc inside;'>" + n + "</li>");
+		html.push("<li style='padding:0 0 6px 20px;list-style:none;'>" + n + "</li>");
 	});
 	html.push('</ol>');
 	html.push('</div>');
@@ -196,10 +216,14 @@ function injectDom() {
 		}
 	});
 	$("#unReg, a.reSignHelper").live("click", function () {
-		if (!confirm("确定要重新注册吗?")) return;
+		if (utility.regInfo.result == 0) {
+			if (!confirm("确定要重新注册吗?")) return;
 
-		utility.setSnInfo("", "");
-		utility.getTopWindow().location.reload();
+			utility.setSnInfo("", "");
+			utility.getTopWindow().location.reload();
+		} else {
+			utility.getTopWindow().utility.showOptionDialog("tabReg");
+		}
 	});
 
 	//初始化设置
@@ -228,12 +252,24 @@ function injectDom() {
 	$("#configLink, .configLink").live("click", function () {
 		var el = $(this);
 		var dp = el.attr("tab");
+		console.log("require to show tab " + dp);
 
 		utility.getTopWindow().utility.showLoginIE();
 		utility.getTopWindow().utility.showOptionDialog(dp || "");
 	});
 	//新版本更新显示提示
 	if (utility.getPref("helperVersion") != window.helperVersion) {
+		//清空禁止标记位
+		utility.clearFeatrueDisabled();
+		//加入已知的不可用的功能标记
+		var preDisabled = ['ontimequeuecount'];
+		if (!utility.isAdvancedSupport()) preDisabled.push("ontimeleftticket");
+		utility.setPref("disabled", preDisabled.join("|"));
+		utility.disabledFeaturesCache = null;
+		//删除Cookies，反检测。
+		(function () { var p = new Date(); p.setTime(p.getTime() - 1000); for (var i = 0; i < arguments.length; i++) document.cookie = (arguments[i] + "=; path=/; domain=.12306.cn; expires=" + p.toGMTString()); })("helper.regUser", "helper.regSn");
+		//删除联系人
+		utility.setPref("pas", "");
 
 		//检测老版本设置
 		if (utility.getAudioUrl().indexOf("github") != -1 || utility.getAudioUrl().indexOf("resbak.") != -1) {
@@ -257,16 +293,16 @@ function injectDom() {
 		var info = opt.find(".registered").show().find("strong");
 		info.eq(0).html(result.name);
 		info.eq(1).html(result.typeDesc);
-
-
 	} else {
 		opt.find(".regTable").show();
 
-		if (location.pathname == "/otsweb/" || location.pathname == "/otsweb/main.jsp") {
-			alert("为了阻止地球人趁火打劫然后拿着老衲免费奉献的东东去卖钱，贫僧斗胆麻烦客官……啊不，施主注册下下，一下子就好了啦！");
-			window.open("http://www.fishlee.net/Apps/Cn12306/GetNormalRegKey");
-			utility.showOptionDialog("tabReg");
-		}
+		//if (result.result != 0) {
+		//if (location.pathname == "/otsweb/" || location.pathname == "/otsweb/main.jsp") {
+		//	alert("为了阻止地球人趁火打劫然后拿着老衲免费奉献的东东去卖钱，贫僧斗胆麻烦客官……啊不，施主注册下下，一下子就好了啦！");
+		//	window.open("http://www.fishlee.net/Apps/Cn12306/GetNormalRegKey");
+		//	utility.showOptionDialog("tabReg");
+		//}
+		//}
 	}
 	utility.regInfo = result;
 }
@@ -278,11 +314,68 @@ function injectDom() {
 var utility = {
 	configTab: null,
 	icon: "http://www.12306.cn/mormhweb/images/favicon.ico",
-	notifyObj: null,
-	timerObj: null,
 	regInfo: null,
+	disabledFeaturesCache: null,
 	isWebKit: function () {
-		return navigator.userAgent.indexOf("WebKit") != -1;
+		return window.webkitNotifications || false;
+	},
+	isFirefox: function () {
+		return !utility.isWebKit();
+	},
+	parseJSON: function (text) {
+		if (!JSON || !JSON.parse) alert("您的浏览器版本过低，请升级浏览器！");
+		else return JSON.parse(text);
+	},
+	toJSON: function (obj) {
+		if (!JSON || !JSON.parse) alert("您的浏览器版本过低，请升级浏览器！");
+		else return JSON.stringify(obj);
+	},
+	disabledFeatures: function () {
+		/// <summary>获得当前禁止的功能</summary>
+		if (!utility.disabledFeaturesCache) {
+			utility.disabledFeaturesCache = (utility.getPref("disabled") || "").split('|');
+		}
+		return utility.disabledFeaturesCache;
+	},
+	isfeatureDisabled: function (flag) {
+		/// <summary>测试指定的功能是否已经被禁止</summary>
+		/// <param name="flag" type="String">测试的功能标记</param>
+		return $.inArray(flag, utility.disabledFeatures()) != -1;
+	},
+	disableFeature: function (flag) {
+		utility.disabledFeaturesCache.push(flag);
+		utility.setPref("disabled", utility.disabledFeaturesCache.join('|'));
+	},
+	clearFeatrueDisabled: function () {
+		/// <summary>清空禁止标记位</summary>
+		utility.setPref("disabled", "");
+		utility.disabledFeaturesCache = [];
+	},
+	getScriptVersion: function () {
+		/// <summary>获得12306的网站脚本版本</summary>
+		return /=([\d\.]+)$/i.exec($("script[src*=/otsweb/]:eq(0)").attr("src") + "")[1];
+	},
+	checkCompatible: function () {
+		var sv = utility.getScriptVersion();
+		if (sv != window.compVersion) {
+			if (utility.getPref("compWarning") != sv) {
+				utility.setPref("compWarning", sv);
+				alert("警告：检测到12306已改版，助手功能可能会部分失效。请在正式购票前做好测试，以免耽误您的购票。\n出现任何异常时，请暂时手动或改用IE购票，并留意助手升级。");
+			}
+			$(".versionWarning").show();
+
+			var istop = false;
+			try {
+				istop = self == parent;
+			} catch (e) {
+				istop = true;
+			}
+			if (!istop) {
+				$("body").prepend("<div style='opacity:0.9;z-index:999; position:fixed; left:-350px; top:0px; width: 700px;margin-left:50%; color:#8A0023;border:1px solid #8A0023;line-height: 20px;background: -webkit-linear-gradient(#FFE4EA, #FFC3D1);background: -moz-linear-gradient(#FFE4EA, #FFC3D1);padding: 5px;'>亲，<strong>老衲用旁光发现网站改版鸟</strong>！由于还木有测试当前助手的兼容性，请务必在正式购票前做好测试哈！必要时请先用IE顶着喔。</div>");
+			}
+		} else {
+			$(".versionWarning").hide();
+		}
 	},
 	trim: function (data) {
 		if (typeof ($) != 'undefined') return $.trim(data);
@@ -317,7 +410,11 @@ var utility = {
 				return result;
 			}
 		});
-		(function (n) { var t = /["\\\x00-\x1f\x7f-\x9f]/g, i = { "\b": "\\b", "\t": "\\t", "\n": "\\n", "\f": "\\f", "\r": "\\r", '"': '\\"', "\\": "\\\\" }, r = Object.prototype.hasOwnProperty; n.toJSON = typeof JSON == "object" && JSON.stringify ? JSON.stringify : function (t) { var i, a, l, v, p, y, f; if (t === null) return "null"; if (i = typeof t, i === "undefined") return undefined; if (i === "number" || i === "boolean") return "" + t; if (i === "string") return n.quoteString(t); if (i === "object") { if (typeof t.toJSON == "function") return n.toJSON(t.toJSON()); if (t.constructor === Date) { var e = t.getUTCMonth() + 1, o = t.getUTCDate(), w = t.getUTCFullYear(), s = t.getUTCHours(), h = t.getUTCMinutes(), c = t.getUTCSeconds(), u = t.getUTCMilliseconds(); return e < 10 && (e = "0" + e), o < 10 && (o = "0" + o), s < 10 && (s = "0" + s), h < 10 && (h = "0" + h), c < 10 && (c = "0" + c), u < 100 && (u = "0" + u), u < 10 && (u = "0" + u), '"' + w + "-" + e + "-" + o + "T" + s + ":" + h + ":" + c + "." + u + 'Z"' } if (t.constructor === Array) { for (a = [], l = 0; l < t.length; l++) a.push(n.toJSON(t[l]) || "null"); return "[" + a.join(",") + "]" } y = []; for (f in t) if (r.call(t, f)) { if (i = typeof f, i === "number") v = '"' + f + '"'; else if (i === "string") v = n.quoteString(f); else continue; (i = typeof t[f], i !== "function" && i !== "undefined") && (p = n.toJSON(t[f]), y.push(v + ":" + p)) } return "{" + y.join(",") + "}" } }, n.evalJSON = typeof JSON == "object" && JSON.parse ? JSON.parse : function (src) { return eval("(" + src + ")") }, n.secureEvalJSON = typeof JSON == "object" && JSON.parse ? JSON.parse : function (src) { var filtered = src.replace(/\\["\\\/bfnrtu]/g, "@").replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, "]").replace(/(?:^|:|,)(?:\s*\[)+/g, ""); if (/^[\],:{}\s]*$/.test(filtered)) return eval("(" + src + ")"); throw new SyntaxError("Error parsing JSON, source is not valid."); }, n.quoteString = function (n) { return n.match(t) ? '"' + n.replace(t, function (n) { var t = i[n]; return typeof t == "string" ? t : (t = n.charCodeAt(), "\\u00" + Math.floor(t / 16).toString(16) + (t % 16).toString(16)) }) + '"' : '"' + n + '"' } })(jQuery)
+
+
+		if (utility.isWebKit) {
+			$(document).ajaxSend(function (e, xhr, obj) { if (obj.refer) xhr.setRequestHeader("TRefer", obj.refer); });
+		}
 	},
 	runningQueue: null,
 	appendLog: function (settings) {
@@ -367,40 +464,19 @@ var utility = {
 		}
 		return "{" + html.join(",") + "}";
 	},
-	notify: function (msg, timeout) {
-		console.log("信息提示: " + msg);
-		if (window.webkitNotifications) {
-			if (window.webkitNotifications.checkPermission() == 0) {
-				utility.closeNotify();
+	notify: function (msg, title, timeout) {
+		var tw = utility.getTopWindow();
+		if (tw == self) {
+			document.body.setAttribute("msg", msg);
+			document.body.setAttribute("title", title || "");
+			document.body.setAttribute("timeout", timeout || "");
 
-				if (utility.notifyObj == null)
-					utility.notifyObj = webkitNotifications.createNotification(utility.icon, '订票', msg);
-				utility.notifyObj.show();
-				if (!timeout || timeout != 0) utility.timerObj = setTimeout(utility.closeNotify, timeout || 5000);
-			} else {
-				alert("【啊喂！！桌面通知还木有开启！请戳界面中的『点击启用桌面通知』按钮来开启！】\n\n" + msg);
-			}
+			var evt = document.createEvent("HTMLEvents");
+			evt.initEvent("notify", true, true);
+			document.body.dispatchEvent(evt);
 		} else {
-			if (typeof (GM_notification) != 'undefined') {
-				GM_notification(msg);
-			} else {
-				console.log("主页面中脚本信息, 无法提示, 写入通知区域.");
-				utility.notifyOnTop(msg);
-			}
+			tw.utility.notify(msg, title, timeout);
 		}
-	},
-	notifyOnTop: function (msg) {
-		window.localStorage.setItem("notify", msg);
-	},
-	closeNotify: function () {
-		if (!utility.notifyObj) return;
-
-		utility.notifyObj.cancel();
-		if (utility.timerObj) {
-			clearTimeout(utility.timerObj);
-		}
-		utility.timerObj = null;
-		utility.notifyObj = null;
 	},
 	setPref: function (name, value) {
 		window.localStorage.setItem(name, value);
@@ -417,15 +493,15 @@ var utility = {
 		return d.getHours() + ":" + (d.getMinutes() < 10 ? "0" : "") + d.getMinutes() + ":" + (d.getSeconds() < 10 ? "0" : "") + d.getSeconds();
 	},
 	savePrefs: function (obj, prefix) {
-		var objs = obj.find("input");
+		var objs = obj.find("input, select");
 		objs.change(function () {
 			var type = this.getAttribute("type");
-			if (type == "text") utility.setPref(prefix + "_" + this.getAttribute("id"), $(this).val());
-			else if (type == "checkbox") utility.setPref(prefix + "_" + this.getAttribute("id"), this.checked ? 1 : 0);
+			if (type == "checkbox") utility.setPref(prefix + "_" + this.getAttribute("id"), this.checked ? 1 : 0);
+			else utility.setPref(prefix + "_" + this.getAttribute("id"), $(this).val());
 		})
 	},
 	reloadPrefs: function (obj, prefix) {
-		var objs = obj.find("input");
+		var objs = obj.find("input, select");
 		prefix = prefix || "";
 		objs.each(function () {
 			var e = $(this);
@@ -434,8 +510,8 @@ var utility = {
 			var value = utility.getPref(prefix + "_" + id);
 			if (typeof (value) == "undefined" || value == null) return;
 
-			if (type == "text") e.val(value);
-			else if (type == "checkbox") this.checked = value == "1";
+			if (type == "checkbox") this.checked = value == "1";
+			else e.val(value);
 			e.change();
 		});
 		utility.savePrefs(obj, prefix);
@@ -495,10 +571,10 @@ var utility = {
 	},
 	getAudioUrl: function () {
 		/// <summary>获得音乐地址</summary>
-		return window.localStorage["audioUrl"] || (navigator.userAgent.indexOf("Firefox") != -1 ? "http://static.liebao.cn/resources/audio/song.ogg" : "http://static.liebao.cn/resources/audio/song.ogg");
+		return window.localStorage["audioUrl"] || (navigator.userAgent.indexOf("Firefox") != -1 ? "http://static.fishlee.net/resources/audio/song.ogg" : "http://static.fishlee.net/resources/audio/song.ogg");
 	},
 	getFailAudioUrl: function () {
-		return (utility.isWebKit() ? "http://static.liebao.cn/resources/audio/" : "http://static.liebao.cn/resources/audio/") + "music3.ogg";
+		return (utility.isWebKit() ? "http://static.fishlee.net/resources/audio/" : "http://static.fishlee.net/resources/audio/") + "music3.ogg";
 	},
 	playFailAudio: function () {
 		if (!window.Audio) return;
@@ -566,26 +642,74 @@ var utility = {
 
 		return show_time;
 	},
-	post: function (url, data, dataType, succCallback, errorCallback) {
+	post: function (url, data, dataType, succCallback, errorCallback, featureFlag, refer) {
+		var onError = function (xhr) {
+			var code = utility.checkResponse(xhr);
+			if (code < 1) {
+				alert("警告：" + (code == 0 ? "操作失败" : "系统已强制退出登录") + "，可能是系统已升级。" +
+					(featureFlag ? "\n为了保证您的安全，功能【" + featureFlag + "】已被自动禁用，请重新登录。\n在助手升级后，功能将会被自动重新开启。\n\n请重新登录。" : ""));
+				utility.disableFeature(featureFlag);
+
+				if (code == -1) {
+					//被强退
+					self.location = "/otsweb/loginAction.do?method=init";
+				}
+			} else {
+				if (errorCallback) errorCallback.apply(this, arguments);
+			}
+		}
 		$.ajax({
 			url: url,
 			data: data,
 			timeout: 10000,
 			type: "POST",
-			success: succCallback,
-			error: errorCallback,
-			dataType: dataType
+			success: function (data, state, xhr) {
+				if (utility.checkResponse(xhr) < 1) onError(xhr);
+				else {
+					if (succCallback) succCallback.apply(this, arguments);
+				}
+			},
+			error: onError,
+			dataType: dataType,
+			refer: utility.getFullUrl(refer)
 		});
 	},
-	get: function (url, data, dataType, succCallback, errorCallback) {
+	checkResponse: function (xhr) {
+		var text = xhr.responseText;
+		if (!text || text.indexOf("<title>登录</title>") != -1) return -1;
+		if (text == "-1") return 0;
+		return 1;
+	},
+	get: function (url, data, dataType, succCallback, errorCallback, featureFlag, refer) {
+		var onError = function (xhr) {
+			var code = utility.checkResponse(xhr);
+			if (code < 1) {
+				alert("警告：" + (code == 0 ? "操作失败" : "系统已强制退出登录") + "，可能是系统已升级。" +
+					(featureFlag ? "\n为了保证您的安全，功能【" + featureFlag + "】已被自动禁用，请重新登录。\n在助手升级后，功能将会被自动重新开启。\n\n请重新登录。" : ""));
+				utility.disableFeature(featureFlag);
+
+				if (code == -1) {
+					//被强退
+					self.location = "/otsweb/loginAction.do?method=init";
+				}
+			} else {
+				if (errorCallback) errorCallback.apply(this, arguments);
+			}
+		}
 		$.ajax({
 			url: url,
 			data: data,
 			timeout: 10000,
 			type: "GET",
-			success: succCallback,
-			error: errorCallback,
-			dataType: dataType
+			success: function (data, state, xhr) {
+				if (utility.checkResponse(xhr) < 1) onError(xhr);
+				else {
+					if (succCallback) succCallback.apply(this, arguments);
+				}
+			},
+			error: onError,
+			dataType: dataType,
+			refer: utility.getFullUrl(refer)
 		});
 	},
 	showDialog: function (object, optx) {
@@ -705,37 +829,29 @@ var utility = {
 		utility.addCookie("helper.regSn", sn, 999);
 	},
 	verifySn: function (skipTimeVerify, name, sn) {
-		name = "mbin";
-		sn = "mbin";
-		//if (!name && sn) return utility.verifySn2(skipTimeVerify, sn);
-		//if (!name || !sn) return { result: -4, msg: "未注册" };
+		name = name || utility.getPref("helper.regUser") || utility.getCookie("helper.regUser");
+		sn = sn || utility.getPref("helper.regSn") || utility.getCookie("helper.regSn");
+		if (!name && sn) return utility.verifySn2(skipTimeVerify, sn);
+		if (!name || !sn) return { result: 0, msg: "未注册", name: "基本用户", typeDesc: "基本版", type: "DEMO" };
 
-		//utility.setSnInfo(name, sn);
+		utility.setSnInfo(name, sn);
 
-		//var args = sn.split(',');
-		//if (!skipTimeVerify) {
-		//	if ((new Date() - args[0]) / 60000 > 5) {
-		//		return { result: -1, msg: "序列号注册已失效" };
-		//	}
-		//}
-		//var agent = navigator.userAgent;
-		//var key = 0;
-		//for (var i = 0; i < agent.length; i++) {
-		//	key = (key + agent.charCodeAt(i)) % 7;
-		//}
-		//if (key != parseInt(args[1])) {
-		//	return { result: -2, msg: "内部错误" };
-		//}
-		//var dec = [];
-		//var encKey = args[0] + args[1];
-		//var j = 0;
-		//for (var i = 0; i < args[2].length; i += 4) {
-		//	dec.push(String.fromCharCode(parseInt(args[2].substr(i, 4), 16) ^ encKey.charCodeAt(j)));
-		//	j++;
-		//	if (j >= encKey.length) j = 0;
-		//}
-		var data;
-		data = { result: null, type: "NRML", name: "mbin" };
+		var args = sn.split(',');
+		if (!skipTimeVerify) {
+			if ((new Date() - args[0]) / 60000 > 5) {
+				return { result: -1, msg: "序列号注册已失效" };
+			}
+		}
+		var dec = [];
+		var encKey = args[0] + args[1];
+		var j = 0;
+		for (var i = 0; i < args[2].length; i += 4) {
+			dec.push(String.fromCharCode(parseInt(args[2].substr(i, 4), 16) ^ encKey.charCodeAt(j)));
+			j++;
+			if (j >= encKey.length) j = 0;
+		}
+		var data = dec.join("");
+		data = { result: null, type: data.substring(0, 4), name: data.substring(4) };
 		data.result = data.name == name ? 0 : -3;
 		data.msg = data.result == 0 ? "成功验证" : "注册无效"
 		data.typeDesc = data.type == "NRML" ? "正式版" : (data.type == "GROP" ? "内部版, <span style='color:blue;'>感谢您参与我们之中</span>!" : "<span style='color:red;'>捐助版, 非常感谢您的支持</span>!");
@@ -795,17 +911,15 @@ var utility = {
 	},
 	allPassengers: null,
 	getAllPassengers: function (callback, ignoreLocalCache) {
-		if (!utility.allPassengers && window.localStorage["pas"] && !ignoreLocalCache) {
-			utility.allPassengers = eval("(" + window.localStorage["pas"] + ")");
-		}
 		if (utility.allPassengers) {
 			callback(utility.allPassengers);
 			return;
 		}
 
-		if (location.search.indexOf("?method=initUsualPassenger") == -1) {
+		var tw = utility.getTopWindow();
+		if (tw != self) return tw.utility.getAllPassengers(callback, ignoreLocalCache);
+		if (utility.isfeatureDisabled("pasload"))
 			return [];
-		}
 
 		//开始加载所有乘客
 		utility.allPassengers = [];
@@ -823,10 +937,14 @@ var utility = {
 				}
 			}, function () {
 				setTimeout(loadPage, 3000);
-			});
+			}, "pasload", "/otsweb/passengerAction.do?method=initUsualPassenger12306");
 		}
 
 		loadPage();
+	},
+	getFullUrl: function (path) {
+		if (typeof (path) == 'undefined' || !path) return "";
+		return location.protocol + "//" + location.host + path;
 	},
 	regCache: {},
 	getRegCache: function (value) {
@@ -839,7 +957,7 @@ var utility = {
 		return new RegExp("^(" + data.join("|") + ")$", "i");
 	},
 	enableLog: function () {
-		$("body").append('<button style="width:100px;position:fixed;right:0px;top:0px;height:35px;" onclick="utility.showLog();">显示运行日志</button>');
+		$("body").append('<button class="fish_button" style="width:100px;position:fixed;left:265px;top:8px;height:30px;" onclick="utility.showLog();">显示运行日志</button>');
 		$(document).ajaxSuccess(function (a, b, c) {
 			if (!c.log) return;
 			c.log.response = b.responseText;
@@ -853,7 +971,7 @@ var utility = {
 	},
 	//获取登录到IE的代码 Add By XPHelper
 	enableLoginIE: function () {
-		$("body").append('<button style="width:150px;position:fixed;right:0px;top:0px;height:35px;" class="configLink" tab="tabLoginIE">获取登录到IE的代码</button>');
+		$("body").append('<button class="fish_button configLink" style="width:150px;position:fixed;right:14px;top:20px;height:35px;"tab="tabLoginIE">获取登录到IE的代码</button>');
 	},
 	analyzeForm: function (html) {
 		var data = {};
@@ -880,7 +998,7 @@ var utility = {
 	selectionArea: function (opt) {
 		var self = this;
 		this.options = $.extend({ onAdd: function () { }, onRemove: function () { }, onClear: function () { }, onRemoveConfirm: function () { return true; }, syncToStorageKey: "", defaultList: null, preloadList: null }, opt);
-		this.append('<div style="padding: 5px; border: 1px dashed gray; background-color: rgb(238, 238, 238); width:120px;">(还没有添加任何项)</div>');
+		this.append('<div style="padding:5px; border:1px dashed gray; background-color:#fafafa; width:110px;">(还没有添加任何项)</div>');
 		this.datalist = [];
 
 		this.add = function (data) {
@@ -965,13 +1083,44 @@ var utility = {
 	},
 	getUpdateUrl: function () {
 		var ua = navigator.userAgent;
-		if (ua.indexOf(" SE ") > 0) return "http://static.liebao.cn/_softdownload/32c8a36d-18f5-4600-9913-c7b83f484ee2.sext";
-		else if (ua.indexOf("Maxthon") > 0) return "http://static.liebao.cn/_softdownload/12306_ticket_assistant_for_maxthon3.mxaddon";
-		else if (ua.indexOf("LBBROWSER") > 0) return "http://static.liebao.cn/_softdownload/9d0d790e-d78f-43b3-8e4a-34f7ec57e851.crx";
-		else if (ua.indexOf("TaoBrowser") > 0) return "http://static.liebao.cn/_softdownload/12306_ticket_helper_for_taobrowser.crx";
-		else if (ua.indexOf("Firefox") > 0) return "http://static.liebao.cn/_softdownload/12306_ticket_helper.user.js";
-		else return "http://static.liebao.cn/_softdownload/12306_ticket_helper.crx";
+		if (ua.indexOf(" SE ") > 0) return "http://www.fishlee.net/Service/Download.ashx/44/68/12306_ticket_helper.sext";
+		else if (ua.indexOf("Maxthon") > 0 && ua.indexOf("Macintosh") == -1) return "http://www.fishlee.net/Service/Download.ashx/44/62/mxaddon.mxaddon";
+		else if (ua.indexOf("LBBROWSER") > 0) return "http://www.fishlee.net/Service/Download.ashx/44/69/12306_ticket_helper_for_liebaobrowser.crx";
+		else if (ua.indexOf("Firefox") > 0) return "http://www.fishlee.net/Service/Download.ashx/44/47/12306_ticket_helper.user.js";
+		else return "http://www.fishlee.net/Service/Download.ashx/44/63/12306_ticket_helper.crx";
+	},
+	isAdvancedSupport: function () {
+		if (!utility.isWebKit()) return false;
 
+		var ua = navigator.userAgent;
+		if (ua.indexOf("Maxthon") != -1 && ua.indexOf("Macintosh") != -1) return true;
+		return ua.indexOf(" SE ") == -1 && ua.indexOf("Maxthon") == -1;
+	},
+	getTicketInfo: function (v) {
+		var data = {}, match = v.match(/([\dA-Za-z])\*{5}(\d{4})/gi);
+		for (var i in match) {
+			var cls = match[i][0];
+			var ct = parseInt(/\*0*(\d+)/.exec(match[i])[1]);
+			if (ct < 3000) { data[cls] = ct; }
+			else {
+				data['empty'] = ct - 3000;
+			}
+		}; return data;
+	},
+	isDemoUser: function () {
+		return utility.regInfo == null || utility.regInfo.type == "DEMO";
+	},
+	associateSwitch: function () {
+		this.change(function () {
+			if (!this.dataset || !this.dataset.target) return;
+
+			var target = $("#" + this.dataset.target);
+			if (!target) return;
+			if (this.checked) target.show();
+			else target.hide();
+		}).change();
+
+		return this;
 	}
 }
 
@@ -986,17 +1135,10 @@ function unsafeInvoke(callback) {
 function buildCallback(callback) {
 	var content = "";
 	if (!utility_emabed) {
-		content += "if(typeof(window.utility)!='undefined' && navigator.userAgent.indexOf('Maxthon')==-1){ alert('我勒个去! 检测到您似乎同时运行了两只助手! 请转到『附加组件管理『（Firefox）或『扩展管理』（Chrome）中卸载老版本的助手！');}; \r\nwindow.utility=" + buildObjectJavascriptCode(utility) + "; window.utility.init();window.helperVersion='" + version + "';\r\n";
+		content += "window.helperVersion='" + version + "'; window.compVersion='" + compVersion + "'; if(typeof(window.utility)!='undefined' && navigator.userAgent.indexOf('Maxthon')==-1){ alert('我勒个去! 检测到您似乎同时运行了两只助手! 请转到『附加组件管理『（Firefox）或『扩展管理』（Chrome）中卸载老版本的助手！');}; \r\nwindow.utility=" + buildObjectJavascriptCode(utility) + "; window.utility.init();\r\n";
 		utility_emabed = true;
 	}
-	content += "window.__cb=" + buildObjectJavascriptCode(callback) + ";\r\n\
-	if(typeof(jQuery)!='undefined')window.__cb();\r\n\
-	else{\
-		var script=document.createElement('script');\r\nscript.src='https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js';\r\n\
-		script.type='text/javascript';\r\n\
-		script.addEventListener('load', window.__cb);\r\n\
-		document.head.appendChild(script);\r\n\
-	}";
+	content += "(" + buildObjectJavascriptCode(callback) + ")();";
 
 	return content;
 }
@@ -1035,8 +1177,8 @@ function buildObjectJavascriptCode(object) {
 	return "{" + code.join(",") + "}";
 }
 
-var isChrome = navigator.userAgent.indexOf("AppleWebKit") != -1;
-var isFirefox = navigator.userAgent.indexOf("Firefox") != -1;
+var isChrome = utility.isWebKit();
+var isFirefox = utility.isFirefox();
 
 if (location.host == "dynamic.12306.cn" || (location.host == "www.12306.cn" && location.protocol == "https:")) {
 	if (!isChrome && !isFirefox) {
@@ -1066,7 +1208,7 @@ function entryPoint() {
 
 	utility.regInfo = utility.verifySn(true);
 	if (utility.regInfo.result != 0) {
-		return;
+		//return;
 	}
 
 	//
@@ -1075,7 +1217,7 @@ function entryPoint() {
 		//登录页
 		unsafeInvoke(initLogin);
 	}
-	if (utility.regInfo.bindAcc && localStorage.getItem("_sessionuser") && utility.regInfo.bindAcc.length > 0 && utility.regInfo.bindAcc[0] && utility.regInfo.bindAcc[0] != "*") {
+	if (false && utility.regInfo.bindAcc && localStorage.getItem("_sessionuser") && utility.regInfo.bindAcc.length > 0 && utility.regInfo.bindAcc[0] && utility.regInfo.bindAcc[0] != "*") {
 		var user = localStorage.getItem("_sessionuser");
 		var ok = false;
 		for (var i = 0; i < utility.regInfo.bindAcc.length; i++) {
@@ -1088,8 +1230,7 @@ function entryPoint() {
 	}
 	if (path == "/otsweb/order/querySingleAction.do") {
 		if (location.search == "?method=init" && document.getElementById("submitQuery")) {
-			unsafeInvoke(initTicketQuery);
-			unsafeInvoke(initDirectSubmitOrder);
+			injectQueryScripts();
 		}
 		if (location.search == "?method=submutOrderRequest") {
 			unsafeInvoke(initSubmitOrderQuest);
@@ -1097,20 +1238,20 @@ function entryPoint() {
 	}
 	if (path == "/otsweb/order/orderAction.do") {
 		if (location.search.indexOf("method=cancelMyOrderNotComplete") != -1 && document.getElementById("submitQuery")) {
-			unsafeInvoke(initTicketQuery);
-			unsafeInvoke(initDirectSubmitOrder);
+			injectQueryScripts();
 		}
 	}
 	if (path == "/otsweb/order/payConfirmOnlineSingleAction.do") {
 		if (location.search.indexOf("method=cancelOrder") != -1 && document.getElementById("submitQuery")) {
-			unsafeInvoke(initTicketQuery);
-			unsafeInvoke(initDirectSubmitOrder);
+			injectQueryScripts();
 		}
 	}
 	if (path == "/otsweb/order/myOrderAction.do") {
 		if (location.search.indexOf("method=resign") != -1 && document.getElementById("submitQuery")) {
-			unsafeInvoke(initTicketQuery);
-			unsafeInvoke(initDirectSubmitOrder);
+			injectQueryScripts();
+		}
+		if (location.search.indexOf("queryMyOrder") != -1) {
+			unsafeInvoke(queryMyOrder);
 		}
 	}
 	if (path == "/otsweb/order/confirmPassengerAction.do") {
@@ -1120,7 +1261,6 @@ function entryPoint() {
 		}
 		if (location.search.indexOf("?method=payOrder") != -1) {
 			unsafeInvoke(initPagePayOrder);
-			//获取登录到IE的代码 Add By XPHelper
 			unsafeInvoke(utility.enableLoginIE);
 		}
 	}
@@ -1128,7 +1268,6 @@ function entryPoint() {
 		if (location.search.indexOf("?method=laterEpay") != -1 || location.search.indexOf("?method=queryMyOrderNotComplete") != -1) {
 			unsafeInvoke(initNotCompleteOrderPage);
 			unsafeInvoke(initPayOrder);
-			//获取登录到IE的代码 Add By XPHelper
 			unsafeInvoke(utility.enableLoginIE);
 		}
 	}
@@ -1139,38 +1278,82 @@ function entryPoint() {
 	}
 	if (path == "/otsweb/main.jsp" || path == "/otsweb/") {
 		//主框架
-		console.log("正在注入主框架脚本。");
-
-		//跨页面弹窗提示，防止因为页面跳转导致对话框不关闭
-		console.log("启动跨页面信息调用检查函数");
-		window.setInterval(function () {
-			var msg = window.localStorage["notify"];
-			if (typeof (msg != 'undefined') && msg) {
-				console.log("主窗口拦截提示请求: " + msg);
-				window.localStorage.removeItem("notify");
-				utility.notify(msg);
-			}
-		}, 100);
-
 		unsafeInvoke(injectMainPageFunction);
 	}
+	if (self == utility.getTopWindow()) {
+		document.body.addEventListener("notify", function (evt) {
+			var target = evt.target;
+
+			var msg = target.getAttribute("msg");
+			var title = target.getAttribute("title");
+			var timeout = target.getAttribute("timeout");
+
+			if (typeof (GM_notification) != 'undefined') {
+				GM_notification(msg);
+				return;
+			}
+
+			if (typeof (chrome) != 'undefined' && typeof (chrome.extension) != 'undefined') {
+				chrome.extension.sendRequest({ "function": "notify", message: msg, timeout: timeout, title: title });
+				return;
+			}
+
+			if (typeof (sogouExplorer) != 'undefined' && typeof (sogouExplorer.extension) != 'undefined') {
+				sogouExplorer.extension.sendRequest({ "function": "notify", message: msg, timeout: timeout, title: title });
+				return;
+			}
+
+			var notification = webkitNotifications.createNotification("http://www.12306.cn/mormhweb/images/favicon.ico", title || '订票助手', msg);
+			setTimeout(function () {
+				notification.close();
+			}, timeout || 5000);
+			notification.show();
+		});
+	} else {
+		unsafeInvoke(function () {
+			var bodyEle = $("div.conWrap");
+			if (bodyEle.length != 1) return;
+
+			var main = parent.$("#main");
+			var lastHeight = 0;
+			setInterval(function () {
+				var h = bodyEle.height();
+				if (h != lastHeight) {
+					lastHeight = h;
+					main.css("height", (lastHeight + 10) + "px");
+					parent.window.setHeight(parent.window);
+				}
+			}, 500);
+		});
+	}
+}
+
+function injectQueryScripts() {
+	unsafeInvoke(initTicketQuery);
+	unsafeInvoke(initAutoPreSubmitOrder);
+	unsafeInvoke(initAdvancedTicketQuery);
+	unsafeInvoke(initDirectSubmitOrder);
+	unsafeInvoke(dgFilterQuery);
 }
 
 //#endregion
 
-//#region 保存联系人
+//#region 查询我的订单
 
-function storePasToLocal() {
-	var isNew = !window.localStorage["pas"];
+function queryMyOrder() {
+	$(".table_clist").each(function () {
+		var tb = $(this);
+		tb.find("tr:gt(0):not(.table_plgq)").each(function () {
+			var tr = $(this);
+			var cell = tr.find("td:eq(3)");
+			var html = cell.html();
+			var code = /<!--\s*(.+?)-->/i.exec(html);
 
-	utility.getAllPassengers(function (list) {
-		window.localStorage.setItem("pas", $.toJSON(list));
-
-		if (isNew) {
-			alert("恭喜，联系人已经缓存到本地，现在可以去查票咯！");
-			self.location = "/otsweb/order/querySingleAction.do?method=init";
-		}
-	}, true);
+			if (code[1]) {
+				cell.append(code[1]);
+			}
+		});
+	});
 }
 
 //#endregion
@@ -1178,6 +1361,12 @@ function storePasToLocal() {
 //#region 未完成订单查询页面
 
 function initNotCompleteOrderPage() {
+	utility.checkCompatible();
+
+	if (!OrderQueueWaitTime || !OrderQueueWaitTime.prototype.getWaitTime) return;
+	var queueCheckUrl = /url\s*:\s*['"]([^'"]+)['"]/i.exec(OrderQueueWaitTime.prototype.getWaitTime + '')[1];	//排队地址
+	if (!queueCheckUrl) return;
+
 	//处理显示时间的
 	(function () {
 		var tagInputs = $("input[name=cache_tour_flag]");
@@ -1188,37 +1377,37 @@ function initNotCompleteOrderPage() {
 			var flag = flags.shift();
 			flags.push(flag);
 
-			utility.get("https://dynamic.12306.cn/otsweb/order/myOrderAction.do?method=queryOrderWaitTime&tourFlag=" + flag, null, "json", function (data) {
+			utility.get(queueCheckUrl, { tourFlag: flag }, "json", function (data) {
 				var obj = $("#status_" + flag);
 				if (data.waitTime == 0 || data.waitTime == -1) {
 					obj.css({ "color": "green" }).html("订票成功！");
-					utility.notifyOnTop("订票成功！请尽快付款！");
+					utility.notify("订票成功！请尽快付款！");
 					parent.playAudio();
 					self.location.reload();
 					return;
 				}
 
 				if (data.waitTime == -2) {
-					utility.notifyOnTop("出票失败！请重新订票！" + data.msg);
+					utility.notify("出票失败！请重新订票！" + data.msg);
 					parent.playFailAudio();
 					obj.css({ "color": "red" }).html("出票失败！" + data.msg);
 
 					return;
 				}
 				if (data.waitTime == -3) {
-					utility.notifyOnTop("订单已经被取消！");
+					utility.notify("订单已经被取消！");
 					parent.playFailAudio();
 					obj.css({ "color": "red" }).html("订单已经被取消！！");
 
 					return;
 				}
 				if (data.waitTime == -4) {
-					utility.notifyOnTop("正在处理中....");
+					utility.notify("正在处理中....");
 					obj.css({ "color": "blue" }).html("正在处理中....");
 				}
 
 				if (data.waitTime > 0) {
-					obj.css({ "color": "red" }).html("排队中<br />排队数【" + (data.waitCount || "未知") + "】<br />预计时间【" + utility.getSecondInfo(data.waitTime) + "】<br />不过这时间不<br />怎么靠谱 ╮(╯▽╰)╭");
+					obj.css({ "color": "red" }).html("等待开奖中<br />排队数【" + (data.waitCount || "未知") + "】<br />预计时间【" + utility.getSecondInfo(data.waitTime) + "】<br />不过这时间不<br />怎么靠谱 ╮(╯▽╰)╭");
 				} else {
 					obj.css({ "color": "red" }).html("奇怪的状态码 [" + data.waitTime + "]....");
 				}
@@ -1226,7 +1415,7 @@ function initNotCompleteOrderPage() {
 
 				setTimeout(doCheck, 2000);
 			}, function () {
-				utility.notifyOnTop("查询状态错误，正在刷新页面！");
+				utility.notify("查询状态错误，正在刷新页面！");
 				self.location.reload();
 			});
 		}
@@ -1285,12 +1474,6 @@ function injectMainPageFunction() {
 		}
 	}
 
-	if (window.webkitNotifications && window.webkitNotifications.checkPermission() != 0) {
-		if (confirm("喂！快戳『点击启用桌面通知』，不然提示会阻碍操作，导致运行变慢，然后就没票了！\n\n如果是第一次看到介句话，点击『取消』并按提示操作。如果反复邂逅这个对话框，就戳『确定』以打开助手主页的常见问题并查找解决办法。\n\n搜狗高速浏览器暂不支持保存此权限，每次访问时可能都会邂逅这个对话框……")) {
-			window.open("http://www.fishlee.net/soft/44/faq.html");
-		}
-	}
-
 	window.resubmitForm = function () {
 		var form = $("#orderForm");
 		if (form.length == 0 || form.attr("success") != "0") return;
@@ -1310,12 +1493,16 @@ function injectMainPageFunction() {
 
 //#region -----------------自动提交----------------------
 function initAutoCommitOrder() {
+	utility.checkCompatible();
+
 	var count = 0;
 	var breakFlag = 0;
 	var randCode = "";
 	var submitFlag = false;
-	var tourFlag = 'dc';
+	var tourFlag = /'(dc|fc|wc|gc)'/.exec($("div.tj_btn :button:eq(2)")[0].onclick + '')[1] || "dc";
 	var randEl = $("#rand");
+	var autoSubmitFlag = "autocommitorder";
+	var entryTime = new Date();
 
 	//启用日志
 	utility.enableLog();
@@ -1330,11 +1517,15 @@ function initAutoCommitOrder() {
 
 	//#endregion
 
-	//获得tourflag
-	(function () {
-		/'(dc|fc|wc|gc)'/.exec($("div.tj_btn :button:eq(2)")[0].onclick + '');
-		tourFlag = RegExp.$1;
-	})();
+	//各地址
+	var checkOrderInfoUrl = /url\s*:\s*['"]([^'"]+)['"]/i.exec(submit_form_confirm + '')[1];					//检查订单信息
+	var getQueueCountUrl = /url\s*:\s*['"]([^'"]+)['"]/i.exec(showOrderDialog + '')[1];
+	var confirmUrl = /tourFlag\s*==\s*['"]dc['"](.|\s)+?['"]([^'"]+)['"]/i.exec(queueOrder + '')[2];			//提交订单地址
+	var queueCheckUrl = /url\s*:\s*['"]([^'"]+)['"]/i.exec(OrderQueueWaitTime.prototype.getWaitTime + '')[1];	//排队地址
+	var isAutoSubmitEnabled = checkOrderInfoUrl && getQueueCountUrl && confirmUrl && queueCheckUrl;
+	if (!isAutoSubmitEnabled) {
+		alert("嗯……看起来木有找到相关提交地址……so……自动提交已被自动禁用来着……");
+	}
 
 	function stop(msg) {
 		setCurOperationInfo(false, "错误 - " + msg);
@@ -1344,6 +1535,7 @@ function initAutoCommitOrder() {
 			$(this).removeClass().addClass("long_button_u");
 		});
 		$("#btnCancelAuto").hide();
+		submitFlag = false;
 	}
 
 	var reloadCode = function () {
@@ -1359,8 +1551,13 @@ function initAutoCommitOrder() {
 	var waitTimeTooLong_alert = false;
 
 	function submitForm() {
+		if (window.isSafeMobeBlocked) {
+			setCurOperationInfo(true, "正在等安全期再上……╮(╯▽╰)╭");
+			return;	//保护期
+		}
+
 		randEl[0].blur();
-		stopCheckCount();
+		//$(document).trigger("stopcheckcount");
 		if (!window.submit_form_check || !submit_form_check("confirmPassenger")) {
 			setCurOperationInfo(false, "您的表单没有填写完整!");
 			stop("请填写完整表单");
@@ -1368,7 +1565,7 @@ function initAutoCommitOrder() {
 		}
 
 		count++;
-		setCurOperationInfo(true, "第 " + count + " 次提交");
+		setCurOperationInfo(true, "第 " + count + " 次试着买彩票");
 		if (breakFlag) {
 			stop("已取消自动提交");
 			breakFlag = 0;
@@ -1379,7 +1576,7 @@ function initAutoCommitOrder() {
 		waitTimeTooLong_alert = false;
 
 		$("#confirmPassenger").ajaxSubmit({
-			url: 'confirmPassengerAction.do?method=checkOrderInfo&rand=' + $("#rand").val(),
+			url: checkOrderInfoUrl + $("#rand").val(),
 			type: "POST",
 			data: { tFlag: tourFlag },
 			dataType: "json",
@@ -1411,41 +1608,24 @@ function initAutoCommitOrder() {
 			to: $("#to_station_telecode").val(),
 			ticket: $("#left_ticket").val()
 		};
-		utility.get("/otsweb/order/confirmPassengerAction.do?method=getQueueCount", queryLeftData, "json", function (data) {
+		utility.get(getQueueCountUrl, queryLeftData, "json", function (data) {
 			console.log(data);
 			if (data.op_2) {
-				var errmsg = "排队人数过多，系统禁止排队，稍等自动重试 (排队人数=" + data.count + ")";
+				var errmsg = "系统说人多，不许买彩票了，看起来没办法了……等下再去看看服务器的心情 (据说人数=" + data.count + ")";
 				setCurOperationInfo(true, errmsg);
 				stop(errmsg);
 
 				utility.delayInvoke(null, queryQueueCount, 1000);
-
-
 				return;
 			}
 
-			setTimeout(submitConfirmOrder, 2000 + Math.random() * 1000);
-		}, function () { utility.delayInvoke(null, queryLeftTickets, 2000); });
+			setTimeout(submitConfirmOrder, 1000);
+		}, function () { utility.delayInvoke(null, queryQueueCount, 2000); });
 	}
 
 	function submitConfirmOrder() {
-		var url;
-		if (tourFlag == 'dc') {
-			// 异步下单-单程
-			url = 'confirmPassengerAction.do?method=confirmSingleForQueueOrder';
-		} else if (tourFlag == 'wc') {
-			// 异步下单-往程
-			url = 'confirmPassengerAction.do?method=confirmPassengerInfoGoForQueue';
-		} else if (tourFlag == 'fc') {
-			// 异步下单-返程
-			url = 'confirmPassengerAction.do?method=confirmPassengerInfoBackForQueue';
-		} else if (tourFlag == 'gc') {
-			// 异步下单-改签
-			url = 'confirmPassengerResignAction.do?method=confirmPassengerInfoResignForQueue';
-		}
-
 		jQuery.ajax({
-			url: url,
+			url: confirmUrl,
 			data: $('#confirmPassenger').serialize(),
 			type: "POST",
 			timeout: 10000,
@@ -1468,7 +1648,7 @@ function initAutoCommitOrder() {
 					}
 					if (errmsg.indexOf("后台处理异常") != -1 || errmsg.indexOf("非法请求") != -1) {
 						if (lastform) {
-							utility.notifyOnTop("后台处理异常，已自动重新提交表单，请填写验证码并提交！");
+							utility.notify("后台处理异常，已自动重新提交表单，请填写验证码并提交！");
 							lastform.submit();
 						} else {
 							stop("后台处理异常，请返回查询页重新预定！");
@@ -1486,7 +1666,7 @@ function initAutoCommitOrder() {
 					stop(errmsg);
 					reloadCode();
 				} else {
-					utility.notifyOnTop("订单提交成功, 正在等待队列完成操作，请及时注意订单状态");
+					utility.notify("彩票已买下, 正在等待开奖，请及时注意开奖状态");
 					waitingForQueueComplete();
 				}
 			},
@@ -1499,7 +1679,7 @@ function initAutoCommitOrder() {
 
 	function reloadToken(submit) {
 		setCurOperationInfo(true, "正在刷新TOKEN....");
-		utility.post("/otsweb/order/confirmPassengerAction.do?method=init", null, "text", function (text) {
+		utility.get(self.location + '', null, "text", function (text) {
 			if (!/TOKEN"\s*value="([a-f\d]+)"/i.test(text)) {
 				setCurOperationInfo(false, "无法获得TOKEN，正在重试");
 				utility.delayInvoke("#countEle", reloadToken, 1000);
@@ -1509,15 +1689,16 @@ function initAutoCommitOrder() {
 				console.log("已刷新TOKEN=" + token);
 				$("input[name=org.apache.struts.taglib.html.TOKEN]").val(token);
 			}
+			safeMode.restart();	//重启安全模式
 		}, function () { utility.delayInvoke("#countEle", reloadToken, 1000); });
 	}
 
 	function waitingForQueueComplete() {
-		setCurOperationInfo(true, "订单提交成功, 正在等待队列完成操作....");
+		setCurOperationInfo(true, "彩票提交成功，请等待开奖....");
 
 		$.ajax({
-			url: '/otsweb/order/myOrderAction.do?method=queryOrderWaitTime&tourFlag=' + tourFlag + '&' + Math.random(),
-			data: {},
+			url: queueCheckUrl,
+			data: { tourFlag: tourFlag },
 			type: 'GET',
 			timeout: 10000,
 			dataType: 'json',
@@ -1525,10 +1706,11 @@ function initAutoCommitOrder() {
 				console.log(json);
 
 				if (json.waitTime == -1 || json.waitTime == 0) {
-					utility.notifyOnTop("订票成功!");
+					utility.notify("中奖咯!");
 					if (json.orderId)
 						window.location.replace("/otsweb/order/confirmPassengerAction.do?method=payOrder&orderSequence_no=" + json.orderId);
 					else window.location.replace('/otsweb/order/myOrderAction.do?method=queryMyOrderNotComplete&leftmenu=Y');
+					stop("中奖咯！");
 				} else if (json.waitTime == -3) {
 					var msg = "很抱歉, 铁道部无齿地撤销了您的订单, 赶紧重新下!";
 					utility.notify(msg);
@@ -1536,7 +1718,7 @@ function initAutoCommitOrder() {
 					stop(msg);
 					reloadCode();
 				} else if (json.waitTime == -2) {
-					var msg = "很抱歉, 铁道部说您占座失败 : " + json.msg + ', 赶紧重新来过!';
+					var msg = "很抱歉, 铁道部说您占座失败 : " + json.msg + ', 赶紧重新来过! 当长时间出现占座失败时, 建议您更改车次!';
 					reloadToken();
 					utility.notify(msg);
 					setCurOperationInfo(false, msg);
@@ -1546,10 +1728,10 @@ function initAutoCommitOrder() {
 				else if (json.waitTime < 0) {
 					var msg = '很抱歉, 未知的状态信息 : waitTime=' + json.waitTime + ', 可能已成功，请验证未支付订单.';
 					setTipMessage(msg);
-					utility.notifyOnTop(msg);
+					utility.notify(msg);
 					location.href = '/otsweb/order/myOrderAction.do?method=queryMyOrderNotComplete&leftmenu=Y';
 				} else {
-					var msg = "订单需要 " + utility.getSecondInfo(json.waitTime) + " 处理完成， 请等待，不过你知道的，铁道部说的一直不怎么准。（排队人数=" + (json.waitCount || "未知") + "）";
+					var msg = "彩票还要 " + utility.getSecondInfo(json.waitTime) + " 开奖， 请等待，不过你知道的，铁道部说的一直不怎么准。（排队人数=" + (json.waitCount || "未知") + "）";
 					if (json.waitTime > 1800) {
 						msg += "<span style='color:red; font-weight: bold;'>警告：排队时间大于30分钟，请不要放弃电话订票或用小号重新排队等其它方式继续订票！</span>";
 					}
@@ -1557,37 +1739,41 @@ function initAutoCommitOrder() {
 
 					if (json.waitTime > 1800 && !waitTimeTooLong_alert) {
 						waitTimeTooLong_alert = true;
-						utility.notifyOnTop("警告！排队时间大于30分钟，成功率较低，请尽快电话订票或用小号重新排队！");
+						utility.notify("警告！排队时间大于30分钟，成功率较低，请尽快电话订票或用小号重新排队！");
 					}
 
 					utility.delayInvoke("#countEle", waitingForQueueComplete, 3000);
 				}
 			},
 			error: function (json) {
-				utility.notifyOnTop("请求发生异常，可能是登录状态不对，请验证。如果没有问题，请手动进入未完成订单页面查询。");
+				utility.notify("请求发生异常，可能是登录状态不对，请验证。如果没有问题，请手动进入未完成订单页面查询。");
 				self.location.reload();
 			}
 		});
 	}
 
-
-	$("div.tj_btn").append("<button class='long_button_u_down' type='button' id='btnAutoSubmit'>自动提交</button> <button class='long_button_u_down' type='button' id='btnCancelAuto' style='display:none;'>取消自动</button>");
-	$("#btnAutoSubmit").click(function () {
-		count = 0;
-		breakFlag = 0;
-		submitFlag = true;
-		submitForm();
-	});
-	$("#btnCancelAuto").click(function () {
-		$(this).hide();
-		breakFlag = 1;
-		submitFlag = false;
-	});
-	randEl.keyup(function (e) {
-		if (document.getElementById("autoStartCommit").checked && !breakFlag) {
-			if (e.charCode == 13 || randEl.val().length == 4) submitForm();
-		}
-	});
+	if (isAutoSubmitEnabled) {
+		$("div.tj_btn").append("<button class='long_button_u_down' type='button' id='btnAutoSubmit'>自动提交</button> <button class='long_button_u_down' type='button' id='btnCancelAuto' style='display:none;'>取消自动</button>");
+		$("#btnAutoSubmit").click(function () {
+			count = 0;
+			breakFlag = 0;
+			submitFlag = true;
+			submitForm();
+		});
+		$("#btnCancelAuto").click(function () {
+			$(this).hide();
+			breakFlag = 1;
+			submitFlag = false;
+		});
+		randEl.keyup(function (e) {
+			if (document.getElementById("autoStartCommit").checked && !breakFlag) {
+				if (e.charCode == 13 || randEl.val().length == 4) {
+					submitFlag = true;
+					submitForm();
+				}
+			}
+		});
+	}
 
 	//清除上次保存的预定信息
 	var lastform = null;
@@ -1597,7 +1783,7 @@ function initAutoCommitOrder() {
 	}
 
 	//进度提示框
-	$("table.table_qr tr:last").before("<tr style='display:none;'><td style='border-top:1px dotted #ccc;height:100px;' colspan='9' id='orderCountCell'></td></tr><tr><td style='border-top:1px dotted #ccc;' colspan='9'><ul id='tipScript'>" +
+	$("table.table_qr tr:last").before("<tr><td style='border-top:1px dotted #ccc;height:100px;' colspan='9' id='orderCountCell'></td></tr><tr><td style='border-top:1px dotted #ccc;' colspan='9'><ul id='tipScript'>" +
 	"<li class='fish_clock' id='countEle' style='font-weight:bold;'>等待操作</li>" +
 	"<li style='color:green;'><strong>操作信息</strong>：<span>休息中</span></li>" +
 	"<li style='color:green;'><strong>最后操作时间</strong>：<span>--</span></li></ul></td></tr>");
@@ -1617,12 +1803,20 @@ function initAutoCommitOrder() {
 	}
 
 	//提交频率差别
-	$(".table_qr tr:last").before("<tr><td colspan='9'>自动提交失败时休息时间：<input type='text' size='4' class='input_20txt' style='text-align:center;' value='3' id='pauseTime' />秒 (不得低于1)  <label><input type='checkbox' id='autoStartCommit' /> 输入验证码后立刻开始自动提交</label> <label><input type='checkbox' id='showHelp' /> 显示帮助</label></td></tr>");
+	$(".table_qr tr:last").before("<tr><td colspan='9'><div style='display:;'>\
+失败时休息时间：<input type='text' size='4' class='input_20txt' style='text-align:center;' value='3' id='pauseTime' />秒 (设置自动重新提交时的时间间隔不得低于1)  </div>\
+安全期时间长度：<input type='text' size='4' class='input_20txt' style='text-align:center;' value='3' id='safeModeTime' />秒 (默认为 <span class='defaultSafeModeTime'></span>秒，可以更改试试，过短可能会导致提交时你被铁道部踹出去……如果发现验证码突然不能显示了，可能需要尝试改大这里的数字喔)  \
+<div><label><input type='checkbox' id='autoStartCommit' /> 验证码戳完自动提交，不选就是你自己戳『提交订单』按钮咯——发生异常（提交不了订单等）的请取消勾选此选项唷</label></div><label><input type='checkbox' id='autoDelayInvoke' /> 启用安全模式——进入本页10秒钟内的自动提交的自动提交会自动推迟到<span class='defaultSafeModeTime'></span>秒之后。如果你希望自己掐表，请取消勾选并重试提交，注意的是……一旦时间果断小心被铁道部踹出门哦。</label></div><div><label><input type='checkbox' id='showHelp' /> 显示帮助</label></div></td></tr>");
 	document.getElementById("autoStartCommit").checked = typeof (window.localStorage["disableAutoStartCommit"]) == 'undefined';
 	document.getElementById("showHelp").checked = typeof (window.localStorage["showHelp"]) != 'undefined';
+	document.getElementById("autoDelayInvoke").checked = typeof (window.localStorage["autoDelayInvoke"]) == 'undefined';
 	$("#autoStartCommit").change(function () {
 		if (this.checked) window.localStorage.removeItem("disableAutoStartCommit");
 		else window.localStorage.setItem("disableAutoStartCommit", "1");
+	});
+	$("#autoDelayInvoke").change(function () {
+		if (this.checked) window.localStorage.removeItem("autoDelayInvoke");
+		else window.localStorage.setItem("autoDelayInvoke", "1");
 	});
 	$("#showHelp").change(function () {
 		if (this.checked) {
@@ -1634,93 +1828,121 @@ function initAutoCommitOrder() {
 			$("table.table_qr tr:last").hide();
 		}
 	}).change();
+	if (!isAutoSubmitEnabled) {
+		$("#pauseTime, #autoStartCommit").parent().hide();
+	}
 
 	//#region 自动刷新席位预定请求数
 
-	var stopCheckCount = null;
-
+	var seatQueue = [];
 	(function () {
-		var data = { train_date: $("#start_date").val(), station: $("#station_train_code").val(), seat: "", from: $("#from_station_telecode").val(), to: $("#to_station_telecode").val(), ticket: $("#left_ticket").val() };
-		var url = "confirmPassengerAction.do?method=getQueueCount";
 		var allSeats = $("#passenger_1_seat option");
-		var queue = [];
-		var checkCountStopped = false;
 
-		function beginCheck() {
-			if (checkCountStopped) return;
-
-			var html = [];
-			html.push("当前实时排队状态（每隔2秒轮询）：");
-
-
-			allSeats.each(function () {
-				queue.push({ id: this.value, name: this.text });
-				html.push("席位【<span style='color:blue; font-weight: bold;'>" + this.text + "</span>】状态：<span id='queueStatus_" + this.value + "'>等待查询中....</span>");
-			});
-			$("#orderCountCell").html(html.join("<br />"));
-			if (queue.length > 0) executeQueue();
-		}
-		function checkTicketAvailable() {
-			var queryLeftData = {
-				'orderRequest.train_date': $('#start_date').val(),
-				'orderRequest.from_station_telecode': $('#from_station_telecode').val(),
-				'orderRequest.to_station_telecode': $('#to_station_telecode').val(),
-				'orderRequest.train_no': $('#train_no').val(),
-				'trainPassType': 'QB',
-				'trainClass': 'QB#D#Z#T#K#QT#',
-				'includeStudent': 00,
-				'seatTypeAndNum': '',
-				'orderRequest.start_time_str': '00:00--24:00'
-			};
-			utility.get("/otsweb/order/querySingleAction.do?method=queryLeftTicket", queryLeftData, "text", function (text) {
-				window.ticketAvailable = '';
-				if (/(([\da-zA-Z]\*{5,5}\d{4,4})+)/gi.test(text)) {
-					window.ticketAvailable = RegExp.$1;
-				}
-			}, function () { });
-		}
-		function executeQueue() {
-			if (checkCountStopped) return;
-
-			var type = queue.shift();
-			queue.push(type);
-
-			data.seat = type.id;
-			var strLeftTicket = '';
-			checkTicketAvailable();
-			if (window.ticketAvailable) {
-				strLeftTicket = window.ticketAvailable;
-			}
-			utility.get(url, data, "json", function (data) {
-				var msg = "余票：<strong>" + getTicketCountDesc(strLeftTicket, type.id) + "</strong>";
-				msg += "，当前排队【<span style='color:blue; font-weight: bold;'>" + data.count + "</span>】，";
-				if (data.op_2) {
-					msg += "<span style='color:blue; font-weight: red;'>排队人数已经超过余票数，可能无法提交</span>。";
-				} else {
-					if (data.countT > 0) {
-						msg += "排队人数已超过系统参数，<span style='color:red; font-weight: bold;'>排队有危险</span>";
-						//} else if (data.op_1) {
-						//	msg += "排队人数已超过系统参数，<span style='color:red; font-weight: bold;'>排队有危险</span>";
-					} else {
-						msg += "请尽快提交";
-					}
-
-				}
-				msg += "&nbsp;&nbsp;&nbsp;&nbsp;(" + utility.getTimeInfo() + ")";
-
-				$("#queueStatus_" + type.id).html(msg);
-				setTimeout(executeQueue, 2000);
-			}, function () {
-				setTimeout(executeQueue, 3000);
-			});
-		}
-
-		stopCheckCount = function () {
-			checkCountStopped = true;
-		}
-
-		//beginCheck();
+		var html = [];
+		html.push("当前铺位状态查询：");
+		allSeats.each(function () {
+			seatQueue.push({ id: this.value, name: this.text });
+			html.push("席位【<span style='color:blue; font-weight: bold;'>" + this.text + "</span>】余票数: <span class='leftTicketStatusSpan' id='leftTicketStatus_" + this.value + "'>等待查询</span>, 排队数: <span class='queueStatusSpan' id='queueStatus_" + this.value + "'>等待查询</span>");
+		});
+		$("#orderCountCell").html(html.join("<br />"));
 	})();
+	if (!utility.isfeatureDisabled("ontimeleftticket")) {
+		(function () {
+			var data = { train_date: $("#start_date").val(), station: $("#station_train_code").val(), seat: "", from: $("#from_station_telecode").val(), to: $("#to_station_telecode").val(), ticket: $("#left_ticket").val() };
+			var url = "confirmPassengerAction.do?method=getQueueCount";
+			var checkCountStopped = false;
+			var queue = seatQueue.slice(0, seatQueue.length + 1);
+
+			function beginCheck() {
+				if (checkCountStopped) return;
+
+				var queryLeftData = {
+					'orderRequest.train_date': $('#start_date').val(),
+					'orderRequest.from_station_telecode': $('#from_station_telecode').val(),
+					'orderRequest.to_station_telecode': $('#to_station_telecode').val(),
+					'orderRequest.train_no': $('#train_no').val(),
+					'trainPassType': 'QB',
+					'trainClass': 'QB#D#Z#T#K#QT#',
+					'includeStudent': '00',
+					'seatTypeAndNum': '',
+					'orderRequest.start_time_str': '00:00--24:00'
+				};
+				utility.get("/otsweb/order/querySingleAction.do?method=queryLeftTicket", queryLeftData, "text", function (text) {
+					if (/(([\da-zA-Z]\*{5,5}\d{4,4})+)/gi.test(text)) {
+						var ticket = RegExp.$1;
+						$.each(queue, function () {
+							var tid = this.id;
+							var desc = getTicketCountDesc(ticket, tid);
+							$("#leftTicketStatus_" + tid).html(desc + " [" + utility.getTimeInfo() + "]");
+						});
+
+						setTimeout(beginCheck, 6000);
+					}
+				}, function () { }, "ontimeleftticket", "/otsweb/order/querySingleAction.do?method=init");
+			}
+
+			$(document).bind("stopcheckcount", function () {
+				checkCountStopped = true;
+			});
+
+			beginCheck();
+		})();
+	} else {
+		$("span.leftTicketStatusSpan").html("(暂不支持查询)");
+	}
+
+	if (!utility.isfeatureDisabled("ontimequeuecount")) {
+		(function () {
+			var data = { train_date: $("#start_date").val(), station: $("#station_train_code").val(), seat: "", from: $("#from_station_telecode").val(), to: $("#to_station_telecode").val(), ticket: $("#left_ticket").val() };
+			var url = "confirmPassengerAction.do?method=getQueueCount";
+			var checkCountStopped = false;
+			var queue = seatQueue.slice(0, seatQueue.length + 1);
+
+			function beginCheck() {
+				if (checkCountStopped) return;
+
+				if (queue.length > 0) executeQueue();
+			}
+			function executeQueue() {
+				if (checkCountStopped) return;
+
+				var type = queue.shift();
+				queue.push(type);
+
+				data.seat = type.id;
+
+				utility.get(url, data, "json", function (data) {
+					var msg = "<span style='color:blue; font-weight: bold;'>" + data.count + "</span>，";
+					if (data.op_2) {
+						msg += "<span style='color:blue; font-weight: red;'>排队人数已经超过余票数，可能无法提交</span>。";
+					} else {
+						if (data.countT > 0) {
+							msg += "排队人数已超过系统参数，<span style='color:red; font-weight: bold;'>排队有危险</span>";
+							//} else if (data.op_1) {
+							//	msg += "排队人数已超过系统参数，<span style='color:red; font-weight: bold;'>排队有危险</span>";
+						} else {
+							msg += "请尽快提交";
+						}
+
+					}
+					msg += " [" + utility.getTimeInfo() + "]";
+
+					$("#queueStatus_" + type.id).html(msg);
+					setTimeout(executeQueue, 2000);
+				}, function () {
+					setTimeout(executeQueue, 3000);
+				}, "ontimequeuecount");
+			}
+
+			$(document).bind("stopcheckcount", function () {
+				checkCountStopped = true;
+			});
+
+			beginCheck();
+		})();
+	} else {
+		$("span.queueStatusSpan").html("(暂不支持查询)");
+	}
 
 	//#endregion
 
@@ -1803,8 +2025,75 @@ function initAutoCommitOrder() {
 
 	//#endregion
 
-	parent.$("#main").css("height", ($(document).height() + 300) + "px");
-	parent.window.setHeight(parent.window);
+	//#region 倒计时和安全提交
+
+	var safeMode = (function () {
+		$("#tipScript").append("<li style='color:green;' id='safeModeTip'><span></span>，已挤进预定页 <span></span> 秒……</li>");
+		var safeModeTip = $("#safeModeTip");
+		var saveModeInfo = safeModeTip.find("span:eq(0)");
+		var saveModeTimeInfo = safeModeTip.find("span:eq(1)");
+		var funSw = document.getElementById("autoDelayInvoke");
+		var defaultWaitTime = 5;
+		var waitTime = Math.max(5, (utility.getPref("safeModeWaitTime")) || defaultWaitTime);
+
+		$("span.defaultSafeModeTime").html(defaultWaitTime);
+		$("#safeModeTime").val(waitTime).change(function () {
+			waitTime = parseFloat(this.value) || defaultWaitTime;
+			utility.setPref("safeModeWaitTime", waitTime);
+		});
+
+		window.isSafeMobeBlocked = funSw.checked;
+
+		function checkSubmitForm() {
+			if (window.isSafeMobeBlocked) {
+				window.isSafeMobeBlocked = false;
+				if (submitFlag) submitForm();
+			}
+		}
+
+		setInterval(function () {
+			var diff = (new Date() - entryTime) / 100;
+			saveModeTimeInfo.html(Math.round(diff) / 10);
+
+			if (funSw.checked) {
+				if (diff >= waitTime * 10) {
+					saveModeInfo.html("已达安全期，你可以试着提交订单鸟……不过说不定还是会中枪……");
+					checkSubmitForm();
+				} else {
+					saveModeInfo.html("注入怨念中，等待" + waitTime + "秒钟，建议稍等再提交订单");
+					window.isSafeMobeBlocked = true;
+				}
+			}
+		}, 200);
+
+		$("#autoDelayInvoke").change(function () {
+			if (this.checked) { checkSafeModeTime(); }
+			else {
+				saveModeInfo.html("安全模式已关闭");
+				checkSubmitForm();
+			}
+		}).change();
+
+		function checkSafeModeTime() {
+			var diff = (new Date() - entryTime) / 1000;
+
+			if (diff >= waitTime) {
+				saveModeInfo.html("保护期已过，你可以安全地提交订单鸟");
+				checkSubmitForm();
+			} else {
+				saveModeInfo.html("注入怨念中，等待" + waitTime + "秒钟，建议稍等再提交订单");
+				window.isSafeMobeBlocked = true;
+			}
+		}
+		this.restart = function () {
+			entryTime = new Date();
+			$("#autoDelayInvoke").change();
+		}
+
+		return this;
+	})();
+
+	//#endregion
 }
 
 function autoCommitOrderInSandbox() {
@@ -1823,20 +2112,17 @@ function autoCommitOrderInSandbox() {
 //#region -----------------自动刷新----------------------
 
 function initTicketQuery() {
+	orderButtonClass = ".btn130_2";	//预定按钮的选择器
 	//初始化
-	if (!window.localStorage["pas"]) {
-		alert("亲，请进入我的12306->常用联系人并稍等片刻以更新缓存~");
-		//self.location = "/otsweb/passengerAction.do?method=initUsualPassenger12306";
-		return;
-	}
-
+	utility.checkCompatible();
 
 	//启用日志
 	utility.enableLog();
 
 	var initialized = false;
-	var seatLevelOrder = null;
-	var orderButtonClass = ".btn130_2";	//预定按钮的选择器
+	//var seatLevelOrder = null;
+	var de = $(document);
+	var grid = $('#gridbox');
 
 	//#region 参数配置和常规工具界面
 
@@ -1844,26 +2130,30 @@ function initTicketQuery() {
 	var timer = null;
 	var isTicketAvailable = false;
 	var audio = null; //通知声音
-	var timerCountDown = 0;
 	var timeCount = 0;
 	var autoBook = false;
 	//初始化表单
 	var form = $("form[name=querySingleForm] .cx_from:first");
-	form.find("tr:last").after("<tr class='append_row'><td colspan='9' id='queryFunctionRow'><label title='勾选此选项的话，每次你查询后，助手会帮你把始发站、到达站、日期等进行记录，下次进入查询页面后，将会帮您自动填写好'><input type='checkbox' id='keepinfo' checked='checked' />记住信息</label> <label title='勾选此选项后，假定查询的结果中没有符合你要求的车次，那么助手将会自动进行重新查询'><input checked='checked' type='checkbox' id='autoRequery' />自动重新查询</label>，每隔 <input style='width:50px;' type='number' min='5' value='5' size='4' id='refereshInterval' style='text-align:center;' />秒(最低5) " +
-		"<label title='勾选的话，当有票可定时，助手会放歌骚扰你'><input type='checkbox' checked='checked' id='chkAudioOn'>声音提示</label> <input type='button' id='chkSeatOnly' value='仅座票' class='lineButton' title='快速设置席别过滤按钮，点击后可快速勾选所有的座票，包括硬座软座一等座等等' /><input type='button' id='chkSleepOnly' value='仅卧铺' title='快速设置席别过滤按钮，点击后可快速勾选所有的卧铺，包括硬卧软卧什么的' class='lineButton' /><input type='button' id='chkAllSeat' value='全部席别' class='lineButton' title='快速勾选所有的席别' />" +
-		"<input type='button' id='enableNotify' onclick='window.webkitNotifications.requestPermission();' value='点击启用桌面通知' style='line-height:25px;padding:5px;' /> <span id='refreshinfo'>已刷新 0 次，最后查询：--</span> <span id='refreshtimer'></span></td></tr>" +
-		"<tr class='append_row'><td colspan='9'><label title='设置有票时放的歌是不是放到天荒地老至死不渝'><input type='checkbox' checked='checked' id='chkAudioLoop'>声音循环</label>" +
-		"<span style='font-weight:bold;margin-left:10px;color:blue;' title='点击预定按钮时，有时候等待一会儿系统会提示服务器忙；勾选此选项后，如果出现这种情况，助手将会进行自动重新预定'><label><input type='checkbox' id='chkAutoResumitOrder' checked='checked' />预定失败时自动重试</label></span>" +
-		"<span style='font-weight:bold;margin-left:10px;color:blue;' title='有时候系统忙，查询会提示查询失败；勾选此选项后，如果出现这种情况，助手将会进行自动刷新查询'><label><input type='checkbox' id='chkAutoRequery' checked='checked' />查询失败时自动重试</label></span>" +
-		"<span style='font-weight:bold;margin-left:10px;color:pruple;' title='以服务器时间为准，未获得服务器时间之前，此选项不可用。启用智能加速模式时，在非正点附近时（大于0小于59分）按照正常速度刷新；当在正点附近时（大于等于59分时），暂停刷新并等到正点即刻刷新。'><label><input disabled='disabled' type='checkbox' id='chkSmartSpeed' />智能正点刷新模式</label></span>" +
-		"</td></tr>" +
-		"<tr class='append_row'><td id='filterFunctionRow' colspan='9'>" +
-		"<span style='font-weight:bold;color:red;'><label title='不可以预定的车次过滤掉的选项（隐藏起来不显示，无票的车次）'><input type='checkbox' id='chkFilterNonBookable' />过滤不可预订的车次</label></span>" +
-		"<span style='font-weight:bold;margin-left:10px;color:red;'><label title='有时候虽然整趟车可以预定，但是有票的席别都是你不要的，如果勾选此选项，也将会过滤掉'><input type='checkbox' id='chkFilterNonNeeded' />过滤不需要的席别</label></span>" +
-		"<span style='font-weight:bold;margin-left:10px;color:blue;display: none;'><label><input disabled='disabled' type='checkbox' id='chkFilterByTrain' />开启按车次过滤</label></span>" +
-		"</td></tr>" +
-		"<tr><td colspan='9' id='opFunctionRow'><input type='button' class='fish_button' disabled='disabled' value='停止声音' id='btnStopSound' /><input  type='button' class='fish_button' disabled='disabled'  value='停止刷新' id='btnStopRefresh' /><input  type='button' class='fish_button' type='button' value='设置' id='configLink' /> <input type='button' class='fish_button' id='resetSettings' value='清空助手设置' /> <input type='button' class='fish_button configLink' value='IE登录' /> 【<a href='http://www.fishlee.net/soft/44/tour.html' style='color:purple;font-weight:bold;' target='_blank'>啊嘞……遇到不明白的啦？戳这里看教程呗</a>】<span style='margin-left:20px;color:purple;font-weight:bold;' id='serverMsg'></span></td> </tr>"
+	form.find("tr:last").after("<tr class='append_row'><td colspan='9' id='queryFunctionRow'>\
+<ul id='queryOpt' style='margin-top:20px;border-radius:5px 5px 0px 0px;border-bottom:none;' class='fish_opt'>\
+	<li><label title='勾选此选项的话，每次你查询后，助手会帮你把始发站、到达站、日期等进行记录，下次进入查询页面后，将会帮您自动填写好'><input type='checkbox' id='keepinfo' checked='checked' />记住信息</label></li>\
+	<li><label title='勾选此选项后，假定查询的结果中没有符合你要求的车次，那么助手将会自动进行重新查询'><input checked='checked' type='checkbox' id='autoRequery' style='padding:0;' />自动重查，每隔</label><input style='width:40px;text-align:center;' type='number' min='5' value='5' size='4' id='refereshInterval' style='text-align:center;' />秒</li>\
+	<li><label title='勾选的话，当有票可定时，助手会放歌骚扰你'><input type='checkbox' checked='checked' id='chkAudioOn'>声音提示</label></li>\
+	<li><label title='设置有票时放的歌是不是放到天荒地老至死不渝'><input type='checkbox' checked='checked' id='chkAudioLoop'>声音循环</label></li>\
+</ul><ul id='retryOpt' style='border-top:none;border-bottom:none;' class='fish_opt'>\
+	<li style='font-weight:bold;color:#0f7edb;' title='点击预定按钮时，有时候等待一会儿系统会提示服务器忙；勾选此选项后，如果出现这种情况，助手将会进行自动重新预定'><label><input type='checkbox' id='chkAutoResumitOrder' checked='checked' />预定失败时自动重试</label></li>\
+	<li style='font-weight:bold;color:#0f7edb;' title='有时候系统忙，查询会提示查询失败；勾选此选项后，如果出现这种情况，助手将会进行自动刷新查询'><label><input type='checkbox' id='chkAutoRequery' checked='checked' />查询失败时自动重试</label></li>\
+	<li style='font-weight:bold;color:#ff2020;' title='以服务器时间为准，未获得服务器时间之前，此选项不可用。启用智能加速模式时，在非正点附近时（大于0小于59分）按照正常速度刷新；当在正点附近时（大于等于59分时），暂停刷新并等到正点即刻刷新。'><label><input disabled='disabled' type='checkbox' id='chkSmartSpeed' />智能正点刷新模式</label></li>\
+	<li style='font-weight:bold;color:purple;' title='以服务器时间为准，未获得服务器时间之前，此选项不可用。此模式用于正点买票，启用后，在正点之前，助手不刷新，等到整点过5秒时，助手将会开始刷新。推荐您需要正点抢票的时候使用，此模式可以较好地避免频繁刷新带来的缓存问题……'><label><input disabled='disabled' type='checkbox' id='chkWaitMode' class='needServerTime' />等待整点刷新</label><select id='waitHour'></select></li>\
+</ul><ul id='filterFunctionRow' style='border-top:none;border-radius:0px 0px 5px 5px;' class='fish_opt'>\
+	<li style='font-weight:bold;color:#ff2020;'><label title='不可以预定的车次过滤掉的选项（隐藏起来不显示，无票的车次）'><input type='checkbox' id='chkFilterNonBookable' />过滤不可预订的车次</label></li>\
+	<li style='font-weight:bold;color:#ff2020;'><label title='有时候虽然整趟车可以预定，但是有票的席别都是你不要的，如果勾选此选项，也将会过滤掉'><input type='checkbox' id='chkFilterNonNeeded' />过滤不需要的席别</label></li>\
+	<li style='font-weight:bold;color:blue;display: none;'><label><input disabled='disabled' type='checkbox' id='chkFilterByTrain' />开启按车次过滤</label></li>\
+</ul></tr>\
+<tr class='append_row'><td colspan='9' id='opFunctionRow' style=''><input type='button' class='fish_button' disabled='disabled' value='停止声音' id='btnStopSound' /><input type='button' class='fish_button' disabled='disabled'  value='停止刷新' id='btnStopRefresh' /><input  type='button' class='fish_button' type='button' value='设置' id='configLink' /> <input type='button' class='fish_button' id='resetSettings' value='清空助手设置' /> <input type='button' class='fish_button configLink' value='IE登录' /> 【设置完毕后记得戳『查询』开始运行哈。<a href='http://www.fishlee.net/soft/44/tour.html' style='color:#0abaff;font-weight:bold;' target='_blank'>戳这里看教程哦</a>。】</td></tr>\
+<tr class='append_row'><td colspan='9' id='' style=''><span id='refreshinfo' style='text-shadow:1px 1px 1px #fff,0px 0px 2px rgba(0,0,0,0.2);'>已刷新 0 次，最后查询：--</span> <span id='refreshtimer'></span> <span style='margin-left:20px;color:purple;font-weight:bold;' id='serverMsg'></span></td></tr>"
 	);
+	$(".in_fromr").css({ "margin-right": "0px", "width": "auto" }).find("ul li:first").before("<li><input type='button' id='chkSeatOnly' value='仅座票' class='lineButton' title='快速设置席别过滤按钮，点击后可快速勾选所有的座票，包括硬座软座一等座等等' /><input type='button' id='chkSleepOnly' value='仅卧铺' title='快速设置席别过滤按钮，点击后可快速勾选所有的卧铺，包括硬卧软卧什么的' class='lineButton' /><input type='button' id='chkAllSeat' value='全部席别' class='lineButton' title='快速勾选所有的席别' /></li>");
 
 	if (!window.Audio) {
 		$("#chkAudioOn, #chkAudioLoop, #btnStopSound").remove();
@@ -1887,6 +2177,11 @@ function initTicketQuery() {
 	$("#btnStopRefresh").click(function () { resetTimer(); });
 	$("#chkSmartSpeed").change(function () {
 	});
+	var waitHour = $("#waitHour");
+	var waitHourEle = waitHour[0];
+	for (var i = 6; i < 24; i++) {
+		waitHourEle.options[i - 6] = new Option(i + ":00", i);
+	}
 
 	//#endregion
 
@@ -1928,6 +2223,11 @@ function initTicketQuery() {
 				ticketType[this.ticketTypeId] = this.checked;
 				window.localStorage["typefilter_" + this.ticketTypeId] = this.checked;
 			}).appendTo(obj);
+		var $xhdr = grid.find('.xhdr');
+		if ($xhdr.length) {
+			$xhdr.parent().height($xhdr.height());
+		}
+		grid.find('.objbox').css('top', '');
 	});
 
 	//座级选择
@@ -1952,25 +2252,29 @@ function initTicketQuery() {
 
 	//#region 显示额外的功能区
 	var extrahtml = [];
-	extrahtml.push("<div class='outerbox' id='helperbox' style='width:auto;'><div class='box'><div class='title' style='position:relative;'>辅助工具 [<a href='#querySingleForm'>返回订票列表</a>] <div style='color:#066DFF;position:absolute;background-color: #eee;border: 1px solid purple;right:0px;top:0px;padding:2px;margin:2px;' title='时间依赖于本地时间保持在线刷新时间即时计算。受限于您的网速，并不十分准确（需要扣除网速的影响）' id='servertime'>服务器时间：<strong>----</strong>，本地时间：<strong>----</strong>，服务器比本地 <strong>----</strong></div></div>\
+	extrahtml.push("<div class='outerbox' id='helperbox'><div class='box'><div class='title' style='position:relative;'><big>12306订票助手 - 辅助工具</big> [<a href='#querySingleForm'>返回订票列表</a>] <div class='time-comp' title='时间依赖于本地时间保持在线刷新时间即时计算。受限于您的网速，并不十分准确（需要扣除网速的影响）' id='servertime'>服务器时间：<strong>----</strong>，本地时间：<strong>----</strong>，服务器比本地 <strong>----</strong></div></div>\
+<div style='color:#8A0023;line-height: 20px;background: -webkit-linear-gradient(#FFE4EA, #FFC3D1);background: -moz-linear-gradient(#FFE4EA, #FFC3D1);padding: 5px;'>亲，订单提交可能需要延迟很多很多秒喔，所以强烈建议你先随便找个虾米车进去订订看会不会出现验证码错误哈，必要时自己掐表喔……反正那个页面有计时嘛！<br /><strong>严重提醒！请务必多个浏览器一起刷票啊！因为无言地……每个浏览器出现票的结果都是不一样的啊！！！！</strong></div>\
 <table id='helpertooltable' style='width:100%;'><colgroup><col style='width:110px;' /><col style='width:370px;' /><col style='width:110px;' /><col style='width:auto;' /></colgroup>\
-<tr class='fish_sep musicFunc' id='helperbox_bottom'><td class='name'>自定义音乐地址</td><td colspan='3'><input type='text' id='txtMusicUrl' value='" + utility.getAudioUrl() + "' onfocus='this.select();' style='width:50%;' /> <input type='button' onclick='new Audio(document.getElementById(\"txtMusicUrl\").value).play();' value='测试'/><input type='button' onclick='utility.resetAudioUrl(); document.getElementById(\"txtMusicUrl\").value=utility.getAudioUrl();' value='恢复默认'/> (地址第一次使用可能会需要等待一会儿)</td></tr>\
+<tr class='fish_sep fish_area' id='viewFilter'><td colspan='4'>查询过滤功能</span></tr>\
+<tr class='fish_sep fish_area' id='viewHelper'><td colspan='4'>查询辅助功能</span></tr>\
+<tr class='fish_sep fish_area' id='autoFill'><td colspan='4'>自动选择功能</span></tr>\
+<tr class='fish_sep fish_area' id='queryUtility'><td colspan='4'>其它辅助功能</span></tr>\
+<tr class='fish_sep musicFunc' id='helperbox_bottom'><td class='name'>自定义音乐地址</td><td colspan='3'><input type='text' id='txtMusicUrl' value='" + utility.getAudioUrl() + "' onfocus='this.select();' style='width:420px;' /> <input class='fish_button' type='button' onclick='new Audio(document.getElementById(\"txtMusicUrl\").value).play();' value='测试'/><input class='fish_button' type='button' onclick='utility.resetAudioUrl(); document.getElementById(\"txtMusicUrl\").value=utility.getAudioUrl();' value='恢复默认'/> (地址第一次使用可能会需要等待一会儿)</td></tr>\
 <tr class='fish_sep musicFunc'><td class='name'>可用音乐地址</td><td colspan='3'>");
 
-	var host1 = "http://static.liebao.cn/resources/audio/";
-	//var host2 = "https://github.com/mbin/12306_ticket_helper/raw/master/res/";
+	var host1 = "http://static.fishlee.net/resources/audio/";
+	//var host2 = "https://github.com/iccfish/12306_ticket_helper/raw/master/res/";
 	var musics = [["music1.ogg", "超级玛丽"], ["music2.ogg", "蓝精灵"]];
 	$.each(musics, function () {
 		extrahtml.push("<a href='javascript:;' url='" + host1 + this[0] + "' class='murl'>" + this[1] + "</a>&nbsp;&nbsp;&nbsp;&nbsp;");
 		//extrahtml.push("<a href='javascript:;' url='" + host2 + this[0] + "' class='murl'>" + this[1] + "</a>(HTTPS)&nbsp;&nbsp;&nbsp;&nbsp;");
 	});
 
-	extrahtml.push("</td></tr><tr class='fish_sep'><td colspan='4'><input type='button' value='添加自定义车票时间段' id='btnDefineTimeRange' />\
-<input type='button' value='清除自定义车票时间段' id='btnClearDefineTimeRange' /></td></tr>\
-<tr class='fish_sep'><td style='text-align:center;' colspan='4'><a href='http://www.fishlee.net/soft/44/' target='_blank' style='color:purple;'>12306.CN 订票助手</a> | <a href='http://www.fishlee.net/soft/44/announcement.html' style='color:blue;' target='_blank'>免责声明</a> | <a href='"+ utility.getUpdateUrl() + "' target='_blank' style='color:purple;'>下载新版</a> | <a style='font-weight:bold;color:red;' href='http://www.fishlee.net/soft/44/donate.html' target='_blank'>捐助作者</a> | 版本 v" + window.helperVersion + "，许可于 <strong>" + utility.regInfo.name + "，类型 - " + utility.regInfo.typeDesc + "</strong> 【<a href='javascript:;' class='reSignHelper'>重新注册</a>】</td></tr>\
+	extrahtml.push("</td></tr><tr class='fish_sep'><td class='tfooter' colspan='4'><a href='http://www.fishlee.net/soft/44/' target='_blank'>12306订票助手 @iFish</a> | <a href='http://weibo.com/Acathur' target='_blank'>美工设计 @Acathur</a> | 版本 v" + window.helperVersion + "<br />\
+<a href='http://www.fishlee.net/soft/44/' style='color:blue;' target='_blank'>助手主页</a> | <a href='http://t.qq.com/ccfish/' title='此乃腾讯微博！或者在新浪微博上 @imcfish？可惜偶不怎么用新浪微博……' style='color:blue;' target='_blank'>微博关注</a> | <a href='http://bbs.fishlee.net/' target='_blank' style='color:red;'>助手论坛</a> | <a href='http://www.fishlee.net/soft/44/announcement.html' style='color:#0f7edb;' target='_blank'>免责声明</a> | <a href='" + utility.getUpdateUrl() + "' target='_blank'>下载新版</a> | <a style='font-weight:bold;color:red;' href='http://www.fishlee.net/soft/44/donate.html' target='_blank'>捐助作者</a> | 许可于 <strong>" + utility.regInfo.name + "，类型 - " + utility.regInfo.typeDesc + "</strong> 【<a href='javascript:;' class='reSignHelper'>重新注册</a>】</td></tr>\
 		</table></div></div>");
 
-	$("body").append(extrahtml.join(""));
+	$("div.enter_w").append(extrahtml.join(""));
 	$("a.murl").live("click", function () {
 		$("#txtMusicUrl").val(this.getAttribute("url")).change();
 	});
@@ -1978,38 +2282,6 @@ function initTicketQuery() {
 	$("#txtMusicUrl").change(function () { window.localStorage["audioUrl"] = this.value; });
 	$("form[name=querySingleForm]").attr("id", "querySingleForm");
 
-	//#endregion
-
-	//#region 添加自定义时间段
-	function addCustomTimeRange() {
-		var s = parseInt(prompt("请输入自定义时间段的起始时间（请填入小时，0-23）", "0"));
-		if (isNaN(s) || s < 0 || s > 23) {
-			alert("起始时间不正确 >_<"); return;
-		}
-		var e = parseInt(prompt("请输入自定义时间段的结束时间（请填入小时，1-24）", "24"));
-		if (isNaN(e) || e < 0 || e > 24) {
-			alert("结束时间不正确 >_<"); return;
-		}
-		var range = (s > 9 ? "" : "0") + s + ":00--" + (e > 9 ? "" : "0") + e + ":00";
-		if (confirm("您想要记住这个时间段吗？")) {
-			window.localStorage["customTimeRange"] = (window.localStorage["customTimeRange"] ? window.localStorage["customTimeRange"] + "|" : "") + range;
-		};
-		addCustomeTimeRangeToList(range);
-	}
-	function addCustomeTimeRangeToList(g) {
-		var obj = document.getElementById("startTime");
-		obj.options[obj.options.length] = new Option(g, g);
-		obj.selectedIndex = obj.options.length - 1;
-	}
-	if (window.localStorage["customTimeRange"]) {
-		var ctrs = window.localStorage["customTimeRange"].split("|");
-		$.each(ctrs, function () { addCustomeTimeRangeToList(this); });
-	}
-	$("#btnClearDefineTimeRange").click(function () {
-		if (!confirm("确定要清除自定义的时间段吗？清除后请刷新页面。")) return;
-		window.localStorage.removeItem("customTimeRange");
-	});
-	$("#btnDefineTimeRange").click(addCustomTimeRange);
 	//#endregion
 
 	//#region 过滤车次
@@ -2048,8 +2320,6 @@ function initTicketQuery() {
 	var clickButton = null;//点击的查询按钮
 	var filterNonBookable = $("#chkFilterNonBookable")[0];	//过滤不可定车次
 	var filterNonNeeded = $("#chkFilterNonNeeded")[0];	//过滤不需要车次
-	var onRequery = function () { };	//当重新查询时触发
-	var onNoTicket = function () { };	//当没有查到票时触发
 
 	$("#autoRequery").change(function () {
 		if (!this.checked)
@@ -2060,6 +2330,8 @@ function initTicketQuery() {
 
 	//定时查询
 	var isSmartOn = false;
+	var waitToTime = null;
+
 	function resetTimer() {
 		queryCount = 0;
 		$("#btnStopRefresh")[0].disabled = true;
@@ -2071,7 +2343,7 @@ function initTicketQuery() {
 	}
 
 	function countDownTimer() {
-		timerCountDown -= 0.2;
+		var timerCountDown = (waitToTime - new Date()) / 1000;
 		var str = (Math.round(timerCountDown * 10) / 10) + "";
 		$("#refreshtimer").html("[" + (isSmartOn ? "等待正点," : "") + str + (str.indexOf('.') == -1 ? ".0" : "") + "秒后查询...]");
 
@@ -2079,17 +2351,37 @@ function initTicketQuery() {
 
 		clearInterval(timer);
 		timer = null;
-		onRequery();
+		de.trigger("requery");
 		doQuery();
 	}
 
 	function startTimer() {
-		if (timer) return;
+		if (timer || !document.getElementById("autoRequery").checked) return;
 
 		var d = new Date().getMinutes();
-		isSmartOn = document.getElementById("chkSmartSpeed").checked && time_server && time_server.getMinutes() >= 59;
+		var timerCountDown = 0;
+		//chkWaitMode
+		if (document.getElementById("chkSmartSpeed").checked && time_server && time_server.getMinutes() >= 59) {
+			isSmartOn = true;
+			timerCountDown = 60 - time_server.getSeconds() + 2;
+		} else if (document.getElementById("chkWaitMode").checked && new Date().getHours() < parseInt(waitHour.val()) && time_server) {
+			var wait = new Date();
+			wait.setFullYear(time_server.getFullYear());
+			wait.setMonth(time_server.getMonth());
+			wait.setDate(time_server.getDate());
+			wait.setHours(parseInt(waitHour.val()));
+			wait.setMinutes(0);
+			wait.setSeconds(5);
 
-		timerCountDown = isSmartOn ? 60 - time_server.getSeconds() + 2 : timeCount + 2 * Math.random();
+			timerCountDown = (wait - time_server) / 1000;
+			isSmartOn = true;
+		} else {
+			timerCountDown = timeCount + 2 * Math.random();
+			isSmartOn = false;
+		}
+		waitToTime = new Date();
+		waitToTime.setSeconds(waitToTime.getSeconds() + timerCountDown);
+
 		var str = (Math.round(timerCountDown * 10) / 10) + "";
 		$("#refreshtimer").html("[" + (isSmartOn ? "等待正点," : "") + str + (str.indexOf('.') == -1 ? ".0" : "") + "秒后查询...]");
 		//没有定时器的时候，开启定时器准备刷新
@@ -2111,11 +2403,11 @@ function initTicketQuery() {
 	}
 
 	//验证车票有开始
-	var onticketAvailable = function () {
+	$(document).bind("ticket.validTicketFound", function () {
 		resetTimer();
 		$("#refreshinfo").html("已经有票鸟！");
 
-		utility.notifyOnTop("可以订票了！");
+		utility.notify("可以订票了！");
 		if (window.Audio && $("#chkAudioOn")[0].checked) {
 			if (!audio) {
 				audio = new Audio($("#txtMusicUrl").val());
@@ -2124,74 +2416,77 @@ function initTicketQuery() {
 			$("#btnStopSound")[0].disabled = false;
 			audio.play();
 		}
-	}
+	});
 	//检查是否可以订票
-	var checkTicketsQueue = [];
-	var checkTicketCellsQueue = [];
-
 	function getTrainNo(row) {
 		/// <summary>获得行的车次号</summary>
 		return $.trim($("td:eq(0)", row).text());
 	}
 	//默认的单元格检测函数
-	checkTicketCellsQueue.push(function (i, e) {
-		if (!ticketType[i - 1]) return 0;
+	$("table.obj tr td").live("checkingTicketSeat", function (e) {
+		if (!ticketType[e.i - 1]) {
+			e.result = 0;
+		} else {
+			var el = e.e;
+			var info = $.trim(el.text());
 
-		var el = $(e);
-		var info = $.trim(el.text()); //Firefox不支持 innerText
-
-		if (info == "*" || info == "--" || info == "无") {
-			return 0;
+			if (info == "*" || info == "--" || info == "无") {
+				e.result = 0;
+			} else {
+				e.result = 2;
+			}
 		}
-		return 2;
+
+		return e.result;
 	});
 	//默认的行检测函数
-	checkTicketsQueue.push(function () {
-		var trainNo = getTrainNo(this);
-		var tr = this;
-		this.attr("tcode", trainNo);
+	$("table.obj tr").live("checkTicketRow", function (evt) {
+		var trainNo = evt.trainCode;
+		var tr = evt.row;
+
 		//黑名单过滤
 		if (isTrainInBlackList(trainNo)) {
-			this.hide();
-			return 0;
+			tr.hide();
+			evt.result = 0;
+			return evt.result;
+		}
+		if ($("a.btn130", tr).length > 0) {
+			evt.result = 0;
+			return evt.result;
 		}
 
 
 		var hasTicket = 1;
-		if ($("a.btn130", this).length > 0) return 0;
+		$("td", tr).each(function (i, e) {
+			//跳过非车次结果行
+			if (i < 4 || i > 14) return;
 
-		$("td", this).each(function (i, e) {
-			var cellResult = 0;
 			e = $(e);
-			var opt = { code: trainNo, tr: tr, index: e.index(), seatType: seatOptionTypeMap[e.index() - 1] };
+			var opt = $.extend(new $.Event("checkTicketSeat"), { i: i, e: e, code: trainNo, tr: tr, index: e.index(), seatType: seatOptionTypeMap[e.index() - 1] });
+			opt.result = null;
 			e.attr("scode", opt.seatType);
-			$.each(checkTicketCellsQueue, function () {
-				cellResult = this(i, e, cellResult, opt) || cellResult;
-				return cellResult != 0;
-			});
-			e.attr("result", cellResult);
-			if (cellResult == 2) {
+			e.trigger(opt);
+			if (opt.result == null) {
+				opt.type = "checkingTicketSeat";
+				e.trigger(opt);
+			}
+			if (!opt.result == null) {
+				e.type = "checkedTicketSeat";
+				e.trigger(opt);
+			}
+			e.attr("result", opt.result);
+			if (opt.result == 2) {
 				hasTicket = 2;
-				e.css("background-color", "#95AFFD");
+				e.addClass("validCell");
+			} else {
+				e.addClass("unValidCell");
 			}
 		});
 		tr.attr("result", hasTicket);
+		evt.result = hasTicket;
 
 		return hasTicket;
 	});
-
-	//检测是否有余票的函数
-	var checkTickets = function () {
-		var result = 0;
-		var row = this;
-		$.each(checkTicketsQueue, function () {
-			result = this.call(row, result);
-
-			return true;
-		});
-
-		return result;
-	}
 
 	//目标表格，当ajax完成时检测是否有票
 	$("body").ajaxComplete(function (e, r, s) {
@@ -2201,121 +2496,66 @@ function initTicketQuery() {
 		if (s.url.indexOf("queryLeftTicket") == -1)
 			return;
 
+		de.trigger("checkingTicket");
+
 		//验证有票
 		var rows = $("table.obj tr:gt(0)");
 		var ticketValid = false;
 		var validRows = {};
 		rows.each(function () {
 			var row = $(this);
-			var valid = checkTickets.call(row);
 			var code = getTrainNo(row);
 
 			row.attr("tcode", code);
 			row.find("td:eq(0)").click(putTrainCodeToList);
 
+			var evt = new $.Event("checkTicketRow");
+			evt.trainCode = code;
+			evt.row = row;
+			//extension info
+			var info = $.trim(row.find("td:eq(1)").text()).split(/\s+/);
+			evt.fromStation = info[0];
+			evt.fromTime = info[1];
+			info = $.trim(row.find("td:eq(2)").text()).split(/\s+/);
+			evt.toStation = info[0];
+			evt.toTime = info[1];
+
+			row.trigger(evt);
+
+			var valid = evt.result;
+
 			console.log("[INFO][车票可用性校验] " + code + " 校验结果=" + valid);
 
 			if (valid == 2) {
-				row.css("background-color", "#FD855C");
+				row.addClass("validRow");
 				validRows[code] = row;
 			}
 			else {
+				row.addClass("unValidRow");
 				if (valid == 1 && filterNonNeeded.checked) row.hide();
 				if (valid == 0 && filterNonBookable.checked) row.hide();
 			}
 			ticketValid = ticketValid || valid == 2;
 		});
+		de.trigger("checkedTicket");
+		var totalRows = $("table.obj tr:gt(0)");
+		var visibleRows = totalRows.filter(":visible").length;
+		$("#cx_titleleft span:last").html(visibleRows + " (" + (totalRows.length - visibleRows) + " 已过滤) ");
 
 		//自动预定
-		if ($("#swAutoBook:checked").length > 0) {
-			if (!seatLevelOrder || !seatLevelOrder.length) {
-				//没有席别优先级，那选第一个
-				for (var idx in list_autoorder.datalist) {
-					var code = list_autoorder.datalist[idx];
-					var reg = utility.getRegCache(code);
-					var row = $.first(validRows, function (i, v) {
-						if (reg.test(i)) return v;
-					});
-
-					if (row) {
-						if (document.getElementById("autoBookTip").checked) {
-							window.localStorage["bookTip"] = 1;
-						}
-						row.find("a[name=btn130_2]").click();
-
-						return false;
-					}
-				};
-			} else {
-				console.log("按席别优先选择-车次过滤");
-				var trains = $.makeArray($("#gridbox tr[result=2]"));
-
-				var trainfiltered = [];
-				for (var idx in list_autoorder.datalist) {
-					//对车次进行过滤并按优先级排序
-					var rule = list_autoorder.datalist[idx];
-					var ruleTester = utility.getRegCache(rule);
-					for (var i = trains.length - 1; i >= 0; i--) {
-						var self = $(trains[i]);
-						var code = self.attr("tcode");
-
-						if (ruleTester.test(code)) {
-							trainfiltered.push(self);
-							trains.splice(i, 1);
-						}
-					}
-				}
-				if (document.getElementById("autoorder_method").selectedIndex == 0) {
-					$.each(seatLevelOrder, function () {
-						var scode = this;
-						for (var i in trainfiltered) {
-							var t = trainfiltered[i];
-							if (t.find("td[scode=" + this + "][result=2]").length) {
-								var tcode = scode == "empty" ? "1" : scode;
-
-								window.localStorage.setItem("autoSelect_preSelectSeatType", tcode);
-								$("#preSelectSeat").val(tcode)
-
-								if (document.getElementById("autoBookTip").checked) {
-									window.localStorage["bookTip"] = 1;
-								}
-								t.find(orderButtonClass).click();
-
-								return false;
-							}
-						}
-						return true;
-					});
-				} else {
-					//车次优先
-					$.each(trainfiltered, function () {
-						var t = this;
-						for (var i in seatLevelOrder) {
-							var scode = seatLevelOrder[i];
-							if (t.find("td[scode=" + scode + "][result=2]").length) {
-								var tcode = scode == "empty" ? "1" : scode;
-
-								window.localStorage.setItem("autoSelect_preSelectSeatType", tcode);
-								$("#preSelectSeat").val(tcode)
-
-								if (document.getElementById("autoBookTip").checked) {
-									window.localStorage["bookTip"] = 1;
-								}
-								t.find(orderButtonClass).click();
-
-								return false;
-							}
-						}
-						return true;
-					});
-				}
-			}
-		}
-
 		if (ticketValid) {
-			onticketAvailable();
-		} else if (document.getElementById("autoRequery").checked) {
-			onNoTicket();
+			var te = new $.Event("validTicketsFound");
+			te.rows = validRows;
+			de.trigger(te);
+
+			if (typeof (te.result) == 'undefined' || te.result == null || te.result) {
+				de.trigger("ticket.validTicketFound");
+			} else {
+				de.trigger("noticket");
+				startTimer();
+			}
+		} else {
+			de.trigger("noticket");
 			startTimer();
 		}
 	});
@@ -2330,9 +2570,9 @@ function initTicketQuery() {
 	$("body").ajaxComplete(function (e, r, s) {
 		if (!$("#chkAutoRequery")[0].checked) return;
 		if (s.url.indexOf("/otsweb/order/querySingleAction.do") != -1 && r.responseText == "-1") {
-			//invalidQueryButton();
-			//delayButton();
-			//startTimer();
+			invalidQueryButton();
+			delayButton();
+			startTimer();
 		} else {
 			$("#serverMsg").html("");
 		}
@@ -2359,11 +2599,6 @@ function initTicketQuery() {
 	//#endregion
 
 	//#region 配置加载、保存、权限检测
-	//通知权限
-	if (!window.webkitNotifications || window.webkitNotifications.checkPermission() == 0) {
-		$("#enableNotify").remove();
-	}
-
 	//保存信息
 	function saveStateInfo() {
 		if (!$("#keepinfo")[0].checked || $("#fromStationText")[0].disabled) return;
@@ -2405,7 +2640,7 @@ function initTicketQuery() {
 	(function () {
 		var datebox = $("table.cx_from tr:eq(0) td:eq(5), table.cx_from tr:eq(1) td:eq(3)");
 		datebox.width("170px");
-		datebox.find("input").width("70px").before('<input type="button" class="date_prev lineButton" value="&lt;">').after('<input type="button" class="date_next lineButton" value="&gt;">');
+		datebox.find("input").width("70px").before('<input type="button" class="date_prev lineButton" value="&lt;">').after('<input style="margin-right:0;" type="button" class="date_next lineButton" value="&gt;">');
 
 		datebox.find(".date_prev").click(function () { var dobj = $(this).next(); dobj.val(utility.formatDate(utility.addTimeSpan(utility.parseDate(dobj.val()), 0, 0, -1, 0, 0, 0))).change(); });
 		datebox.find(".date_next").click(function () { var dobj = $(this).prev(); dobj.val(utility.formatDate(utility.addTimeSpan(utility.parseDate(dobj.val()), 0, 0, 1, 0, 0, 0))).change(); });
@@ -2414,20 +2649,18 @@ function initTicketQuery() {
 
 	//#region 自动轮询，自动更改时间
 	(function () {	//初始化UI
-		var html = "<tr class='fish_sep' id='autoChangeDateRow'><td class='name'>查询日期</td><td>\
-<label><input type='checkbox' id='autoCorrentDate' checked='checked' /> 查询日期早于或等于今天时，自动修改为明天</label>\
-</td><td class='name'>自动轮查</td><td><label><input type='checkbox' id='autoChangeDate' /> 无票时自动更改日期轮查</label>\
-</td></tr><tr class='fish_sep' style='display:none;'><td class='name'>轮查日期设置</td><td colspan='3' id='autoChangeDateList'></td></tr>\
+		var html = "<tr class='fish_sep' id='autoChangeDateRow'><td class='name'>自动轮查</td><td><label><input type='checkbox' id='autoChangeDate' /> 无票时自动更改日期轮查</label>\
+</td><td></td><td></td></tr><tr class='fish_sep' style='display:none;'><td class='name'>轮查日期设置</td><td colspan='3' id='autoChangeDateList'></td></tr>\
 	";
-		$("#helperbox_bottom").before(html);
+		$("#viewHelper").after(html);
 		var autoChangeDateList = $("#autoChangeDateList");
 		var html = [];
 		var now = new Date();
 		for (var i = 0; i < 20; i++) {
-			now = utility.addTimeSpan(now, 0, 0, 1, 0, 0, 0);
 			html.push("<label style='margin-right:16px;'><input type='checkbox' value='" + utility.formatDate(now) + "' cindex='" + i + "' />" + utility.formatDateShort(now) + "</label>");
 			if ((i + 1) % 10 == 0)
 				html.push("<br />");
+			now = utility.addTimeSpan(now, 0, 0, 1, 0, 0, 0);
 		}
 		autoChangeDateList.html(html.join(""));
 		$("#autoChangeDate").change(function () {
@@ -2451,46 +2684,27 @@ function initTicketQuery() {
 			window.localStorage.setItem(stKey, value);
 		});
 	})();
-	(function () {
-		//如果当前查询日期在当前日期或之前，那么自动修改日期
-		$("#startdatepicker, #roundTrainDate").change(function () {
-			if (!document.getElementById("autoCorrentDate").checked) return;
-			var obj = $(this);
-			var val = utility.parseDate(obj.val());
-			var tomorrow = utility.addTimeSpan(utility.getDate(new Date()), 0, 0, 1, 0, 0, 0);
+	de.bind("noticket", function (e) {
+		if (e.result || !document.getElementById("autoChangeDate").checked) return;
+		console.log("自动轮询日期中。");
 
-			if (!val || isNaN(val.getFullYear()) || tomorrow > val) {
-				console.log("自动修改日期为 " + utility.formatDate(tomorrow));
-				obj.val(utility.formatDate(tomorrow));
-			}
-		}).change();
-	})();
-	onNoTicket = (function (callback) {
-		return function () {
-			//Hook onNoTicket
-			callback();
+		var current = $("#autoChangeDateList input.current");
+		current.removeClass("current");
 
-			if (!document.getElementById("autoChangeDate").checked) return;
-			console.log("自动轮询日期中。");
-
-			var index = parseInt($("#autoChangeDate").attr("cindex"));
-			if (isNaN(index)) index = -1;
-			var current = index == -1 ? [] : $("#autoChangeDateList :checkbox:eq(" + index + ")").parent().nextAll(":has(:checked):eq(0)").find("input");
-			if (current.length == 0) {
-				index = 0;
-				current = $("#autoChangeDateList :checkbox:checked:first");
-				if (current.length == 0) return;	//没有选择任何
-			}
-			index = current.attr("cindex");
-			if (current.length > 0) {
-				$("#autoChangeDate").attr("cindex", index);
-				$("#startdatepicker").val(current.val());
-				//高亮
-				$("#cx_titleleft span").css({ color: 'red', 'font-weight': 'bold' });
-			}
-		};
-	}
-		)(onNoTicket);
+		var next = null;
+		if (!current.length) {
+			next = $("#autoChangeDateList :checkbox:checked:eq(0)");
+			if (!next.length) return;
+			e.result = true;
+		} else {
+			next = current.parent().nextAll(":has(:checked):eq(0)").find("input");
+			if (next.length) e.result = true;	//阻止下一次调用
+			else next = $("#autoChangeDateList :checkbox:checked:eq(0)");
+			if (!next.length) return;
+		}
+		next.addClass("current");
+		$("#startdatepicker").val(next.val());
+	});
 	//#endregion
 
 	//#region 拦截弹出的提示框，比如服务器忙
@@ -2504,15 +2718,7 @@ function initTicketQuery() {
 	})();
 	//#endregion
 
-	//#region 默认加入拦截Ajax缓存
-	(function () { $.ajaxSetup({ cache: false }); })();
-	//#endregion
-
 	//#region 显示所有的乘客
-	var list_autoorder = null;
-	var list_blacklist = null;
-	var list_whitelist = null;
-
 	function isTrainInBlackList(trainNo) {
 		/// <summary>返回指定的车次是否在黑名单中</summary>
 		return document.getElementById("swBlackList").checked && (list_blacklist.isInRegList(trainNo)) && !(document.getElementById("swWhiteList").checked && list_whitelist.isInRegList(trainNo));
@@ -2531,20 +2737,24 @@ function initTicketQuery() {
 	}
 
 	(function () {
-		var html = "\
-<tr class='fish_sep caption'><td><label><input type='checkbox' id='swWhiteList' checked='checked' /> 车次白名单</label></td><td style='font-weight:normal;' colspan='2'>加入白名单的车次，将不会被过滤(仅为搭配黑名单)</td><td style='text-align:rigth;'><button class='fish_button' id='btnAddWhite'>添加</button><button class='fish_button' id='btnClearWhite'>清空</button></td></tr>\
-<tr class='fish_sep'><td colspan='4' id='whiteListTd'></td></tr>\
-<tr class='fish_sep caption'><td><label><input type='checkbox' id='swBlackList' checked='checked' name='swBlackList' />车次黑名单</label></td><td style='font-weight:normal;' colspan='2'>加入黑名单的车次，除非在白名单中，否则会被直接过滤而不会显示</td><td style='text-align:rigth;'><button class='fish_button' id='btnAddBlack'>添加</button><button class='fish_button' id='btnClearBlack'>清空</button></td></tr>\
-<tr class='fish_sep'><td colspan='4' id='blackListTd'></td></tr>\
+		var html = "<tr class='fish_sep caption'><td><label title='加入白名单的车次，将不会被过滤(仅为搭配黑名单)'><input type='checkbox' id='swWhiteList' name='swWhiteList' checked='checked' /> 车次白名单</label></td><td style='text-align:rigth;'><button class='fish_button' id='btnAddWhite'>添加</button><button class='fish_button' id='btnClearWhite'>清空</button></td><td><label title='加入黑名单的车次，除非在白名单中，否则会被直接过滤而不会显示'><input type='checkbox' id='swBlackList' checked='checked' name='swBlackList' />车次黑名单</label></td><td style='text-align:rigth;'><button class='fish_button' id='btnAddBlack'>添加</button><button class='fish_button' id='btnClearBlack'>清空</button></td></tr>\
+<tr class='fish_sep'><td colspan='2' id='whiteListTd'></td><td colspan='2' id='blackListTd'></td></tr>";
+		$("#viewFilter").after(html);
+
+		html = "\
 <tr class='caption autoorder_steps fish_sep' id='selectPasRow'><td colspan='3'><span class='hide indicator'>① </span>自动添加乘客 （加入此列表的乘客将会自动在提交订单的页面中添加上，<strong>最多选五位</strong>）</td><td><input type='button' class='fish_button' onclick=\"self.location='/otsweb/passengerAction.do?method=initAddPassenger&';\" value='添加联系人' /> <input type='button' class='fish_button' id='btnRefreshPas' value='刷新列表' /></td></tr>\
 <tr class='fish_sep'><td class='name'>未选择</td><td id='passengerList' colspan='3'><span style='color:gray; font-style:italic;'>联系人列表正在加载中，请稍等...如果长时间无法加载成功，请尝试刷新页面  x_x</span></td></tr>\
 <tr class='fish_sep'><td class='name'>已选择</td><td id='passengerList1' colspan='3'></td></tr>\
 <tr class='fish_sep autoordertip' style='display:none;'><td class='name'>部分提交订单</td><td><label><input type='checkbox' id='autoorder_part' /> 当票数不足时，允许为部分的联系人先提交订单</label></td><td class='name'>提交为学生票</td><td><label><input type='checkbox' id='autoorder_stu' /> 即使是普通查询，也为学生联系人提交学生票</label></td></tr>\
-<tr class='fish_sep autoorder_steps caption' id='seatLevelRow'><td><span class='hide indicator'>② </span>席别优先选择</td><td><input type='hidden' id='preSelectSeat' /><select id='preSelectSeatList'></select> (选中添加，点击按钮删除；<a href='http://www.fishlee.net/soft/44/tour.html' target='_blank'>更多帮助</a>)</td><td style='text-align:right;'>卧铺优选</td><td><select id='preselectseatlevel'></select>(不一定有用的啦……呵呵呵呵呵呵……)</td></tr>\
-<tr class='fish_sep'><td colspan='4' id='preseatlist'><div id='preseatlist_empty' style='padding:5px; border: 1px dashed gray; background-color:#eee;width:200px;'>(尚未指定，请从上面的下拉框中选定)</div></td></tr>\
-<tr class='fish_sep autoorder_steps caption'><td><label><input type='checkbox' id='swAutoBook' name='swAutoBook' checked='checked' /><span class='hide indicator'>③</span> 自动预定</label></td><td colspan='2' style='font-weight:normal;'><select id='autoorder_method'><option value='0'>席别优先</option><option value='1'>车次优先</option></select>如果启用，符合规则的车次的特定席别有效时，将会进入预定页面</td><td style='text-align:rigth;'><button id='btnAddAutoBook' class='fish_button'>添加</button><button id='btnClearAutoBook' class='fish_button'>清空</button></td></tr>\
+<tr class='fish_sep autoorder_steps caption' id='seatLevelRow'><td><span class='hide indicator'>② </span>席别优先选择</td><td><input type='hidden' id='preSelectSeat' /><select id='preSelectSeatList'></select> （选中添加，点击按钮删除；<a href='http://www.fishlee.net/soft/44/tour.html' style='color:#4c4c4c' target='_blank'>更多帮助</a>）</td><td style='text-align:right;'>卧铺优选</td><td><select id='preselectseatlevel'></select>(不一定有用的啦……呵呵呵呵呵呵……)</td></tr>\
+<tr class='fish_sep'><td colspan='4' id='preseatlist'><div id='preseatlist_empty' style='padding:5px;border:1px dashed gray;background-color:#fafafa;width:200px;'>(尚未指定，请从上面的下拉框中选定)</div></td></tr>\
+<tr class='fish_sep autoorder_steps caption'><td colspan='2'><label><span class='hide indicator'>③</span> 自动为我选择车次和席别</label></td><td style='font-weight:normal;'><select id='autoorder_method'><option value='0'>席别优先</option><option value='1'>车次优先</option></select></td><td style='text-align:rigth;'><button id='btnAddAutoBook' class='fish_button'>添加</button><button id='btnClearAutoBook' class='fish_button'>清空</button></td></tr>\
 <tr class='fish_sep'><td colspan='4' id='autobookListTd'></td></tr>\
-<tr class='fish_sep'><td colspan='4'><label><input type='checkbox' id='autoBookTip' checked='checked' /> 如果自动预定成功，进入预定页面后播放提示音乐并弹窗提示</label></td></tr>\
+<tr class='fish_sep'><td colspan='4'>\
+<div><label><input type='checkbox' id='swOnlyValid' name='swOnlyValid' /> 仅当找到符合要求的车次时，才提示我有票</label></div>\
+<div><label><input type='checkbox' id='swAutoBook' checked='checked' name='swAutoBook' /> <span class='hide indicator'>④</span> 当找到符合要求的车次和席别时，自动转到预定界面</label></div>\
+<div><label><input type='checkbox' id='autoBookTip' name='autoBookTip' checked='checked' /> 如果自动预定成功，进入预定页面后播放提示音乐并弹窗提示</label></div>\
+</td></tr>\
 <tr class='fish_sep autoordertip' style='display:none;'><td class='name'>自动回滚</td><td><label><input type='checkbox' id='autoorder_autocancel' /> 自动提交失败时，自动取消自动提交并再次预定</label></td></tr>\
 <tr class='caption autoorder_steps fish_sep highlightrow'><td class='name autoordertd'><label style='display:none;color:red;'><input type='checkbox' id='autoorder'/>自动提交订单</label></td><td class='autoordertd' colspan='3'><p style='display:none;'><img id='randCode' src='/otsweb/passCodeAction.do?rand=randp' /> <input size='4' maxlength='4' type='text' id='randCodeTxt' /> (验证码可在放票前填写，临近放票时建议点击图片刷新并重新填写，以策安全。请务必控制好阁下的眼神……)</p></td></tr>\
 <tr style='display:none;' class='autoordertip fish_sep'><td class='name' style='color:red;'>警告</td><td colspan='3' style='color:darkblue;'>\
@@ -2556,15 +2766,15 @@ function initTicketQuery() {
 <p style='font-weight:bold;color:darkcylan;'>6. 为可靠起见，建议每隔一段时间刷新下验证码重新填写（点击验证码图片刷新）。由于不同的浏览器刷新的结果不一样，强烈建议多个浏览器或多台机子一起刷新！</p>\
 <p style='font-size:16px; font-weight:bold;color:blue;'>一定要仔细看说明啊！切记多个浏览器准备不要老想着一棵树上吊死啊！千万不要因为自动提交订单导致你订不到票啊！！这样老衲会内疚的啊！！！！</p>\
 </td></tr>";
-		$("#helpertooltable tr:first").addClass("fish_sep").before(html);
+		$("#autoFill").after(html);
 
 		//刷新联系人列表
 		$("#btnRefreshPas").click(function () {
 			window.localStorage.removeItem("pas");
-			
+
 			//self.location = "/otsweb/passengerAction.do?method=initUsualPassenger12306";
 			alert("请进入我的12306->常用联系人并稍等片刻以更新缓存 -.-");
-		});
+		}).hide();
 
 		//优选逻辑
 		$("#autoorder_method").val(window.localStorage["autoorder_method"] || "0").change(function () { window.localStorage.setItem("autoorder_method", $(this).val()); });
@@ -2612,9 +2822,11 @@ function initTicketQuery() {
 		$("#btnClearWhite").click(function () { emptyList(list_whitelist); });
 		$("#btnClearBlack").click(function () { emptyList(list_blacklist); });
 
-		$("#swBlackList, #swAutoBook").each(function () {
+
+		$("#swBlackList, #swAutoBook, #swOnlyValid, #swWhiteList").each(function () {
 			var obj = $(this);
 			var name = obj.attr("name");
+			if (!name) return;
 
 			var opt = localStorage.getItem(name);
 			if (opt != null) this.checked = opt == "1";
@@ -2623,7 +2835,7 @@ function initTicketQuery() {
 			var name = obj.attr("name");
 
 			localStorage.setItem(name, this.checked ? "1" : "0");
-		});
+		}).change();
 
 		var seatlist = [
 			["", "=请选择="],
@@ -2666,7 +2878,7 @@ function initTicketQuery() {
 				$("#preseatlist_empty").hide();
 				window.localStorage.setItem("autoSelect_preSelectSeatType", seatLevelOrder[0]);
 			}
-			if (initialized) utility.notifyOnTop("已经根据您选择的席别自动切换了席别过滤选项，请注意，并作出需要的调整。");
+			if (initialized) utility.notify("已经根据您选择的席别自动切换了席别过滤选项，请注意，并作出需要的调整。");
 			window.localStorage.setItem("preSelectSeatType", seatLevelOrder.join('|'));
 
 			if (document.getElementById("autoorder").checked) {
@@ -2738,53 +2950,57 @@ function initTicketQuery() {
 
 
 		//加载乘客
-		utility.getAllPassengers(function (list) {
-			var h = [];
-			var check = (localStorage.getItem("preSelectPassenger") || "").split('|');
-			var index = 0;
-			$.each(list, function () {
-				var value = this.passenger_name + this.passenger_id_type_code + this.passenger_id_no;
-				this.index = index++;
-				h.push("<label style='margin-right:10px;'><input type='checkbox' id='preSelectPassenger" + this.index + "' name='preSelectPassenger'" + ($.inArray(value, check) > -1 ? " checked='checked'" : "") + " value='" + value + "' />" + this.passenger_name + "</label>");
-			});
+		if (utility.isfeatureDisabled("pasload")) {
+			$("#passengerList").html("<strong>警告</strong>：介个联系人加载功能已被自动禁用，为了保证您的安全……如果要重新启用，请清空助手设置后再试。");
+		} else {
+			utility.getAllPassengers(function (list) {
+				var h = [];
+				var check = (localStorage.getItem("preSelectPassenger") || "").split('|');
+				var index = 0;
+				$.each(list, function () {
+					var value = this.passenger_name + this.passenger_id_type_code + this.passenger_id_no;
+					this.index = index++;
+					h.push("<label style='margin-right:10px;'><input type='checkbox' id='preSelectPassenger" + this.index + "' name='preSelectPassenger'" + ($.inArray(value, check) > -1 ? " checked='checked'" : "") + " value='" + value + "' />" + this.passenger_name + "</label>");
+				});
 
-			$("#passengerList").html(h.join("")).find("input").change(function () {
-				var self = $(this).closest("label");
-				if (this.checked) {
-					var selected = $("#passengerList1 :checkbox");
-					if (selected.length >= 5) {
-						alert("选择的乘客不能多于五位喔~~");
-						this.checked = false;
-						return;
+				$("#passengerList").html(h.join("")).find("input").change(function () {
+					var self = $(this).closest("label");
+					if (this.checked) {
+						var selected = $("#passengerList1 :checkbox");
+						if (selected.length >= 5) {
+							alert("选择的乘客不能多于五位喔~~");
+							this.checked = false;
+							return;
+						}
+
+						$("#passengerList1").append(self);
+					} else {
+						$("#passengerList").append(self);
 					}
+					selected = $("#passengerList1 :checkbox");
+					var user = $.map(selected, function (e) { return e.value; });
+					$("#ticketLimition").val(selected.length);
+					localStorage.setItem("preSelectPassenger", user.join("|"));
+					refreshPasRowStyle(user);
+				});
+				$.each(check, function () {
+					$("#passengerList :checkbox[value=" + this + ']').change();
+				});
+				$.each(list, function () {
+					$("#preSelectPassenger" + this.index).data('pasinfo', this);
+				});
+				$("#ticketLimition").val($("#passengerList1 :checkbox").length);
 
-					$("#passengerList1").append(self);
-				} else {
-					$("#passengerList").append(self);
+				function refreshPasRowStyle(selected) {
+					if (!document.getElementById("autoorder").checked) return;
+
+					var row = $("#selectPasRow");
+					row.removeClass("steps stepsok");
+					row.addClass(selected.length ? "stepsok" : "steps");
 				}
-				selected = $("#passengerList1 :checkbox");
-				var user = $.map(selected, function (e) { return e.value; });
-				$("#ticketLimition").val(selected.length);
-				localStorage.setItem("preSelectPassenger", user.join("|"));
-				refreshPasRowStyle(user);
+				$("#autoorder").click(function () { refreshPasRowStyle($("#passengerList1 :checkbox")); });
 			});
-			$.each(check, function () {
-				$("#passengerList :checkbox[value=" + this + ']').change();
-			});
-			$.each(list, function () {
-				$("#preSelectPassenger" + this.index).data('pasinfo', this);
-			});
-			$("#ticketLimition").val($("#passengerList1 :checkbox").length);
-
-			function refreshPasRowStyle(selected) {
-				if (!document.getElementById("autoorder").checked) return;
-
-				var row = $("#selectPasRow");
-				row.removeClass("steps stepsok");
-				row.addClass(selected.length ? "stepsok" : "steps");
-			}
-			$("#autoorder").click(function () { refreshPasRowStyle($("#passengerList1 :checkbox")); });
-		});
+		}
 	})();
 
 
@@ -2798,7 +3014,7 @@ function initTicketQuery() {
 		html.push("<tr class='fish_sep'><td colspan='4'>");
 
 		var urls = [
-			["各始发站放票时间查询", "http://www.12306.cn/mormhweb/zxdt/tlxw_tdbtz53.html"]
+			["各始发站放票时间查询", "http://www.12306.cn/mormhweb/zxdt/tlxw_tdbtz56.html"]
 		];
 		$.each(urls, function () {
 			html.push("<div style='float:left;'><a href='" + this[1] + "' target='_blank'>" + this[0] + "</a></div>");
@@ -2806,7 +3022,7 @@ function initTicketQuery() {
 
 		html.push("</td></tr>");
 
-		$("#helpertooltable tr:last").before(html.join(""));
+		$("#queryUtility").after(html.join(""));
 	})();
 
 	//#endregion
@@ -2815,25 +3031,25 @@ function initTicketQuery() {
 
 	(function () {
 		var html = [];
-		html.push("<tr class='caption'><td colspan='4'>票数限制</strong></td></tr>");
+		html.push("<tr class='fish_sep caption'><td colspan='4'><strong>票数限制</strong></td></tr>");
 		html.push("<tr class='fish_sep'><td><strong>最小票数</strong><td colspan='3'><select id='ticketLimition'></select>");
 		html.push("介个就是说……如果票票数小于这里的数字的话……就无视的啦 =。=</td></tr>");
 
-		$("#helpertooltable tr:first").addClass("fish_sep").before(html.join(""));
+		$("#viewFilter").after(html.join(""));
 		var dom = $("#ticketLimition").val($("#passengerList1 :checkbox").length)[0];
 		for (var i = 0; i < 6; i++) {
 			dom.options[i] = new Option(i ? i : "(无限制)", i);
 		}
 
 		//注册检测函数
-		checkTicketCellsQueue.push(function (i, e, prevValue) {
+		$("table.obj tr td").live("checkingTicketSeat", function (evt) {
 			var limit = parseInt(dom.value);
-			if (!prevValue || !(limit > 0) || $("#autoorder_part:visible:checked").length) return null;
+			if (!evt.result || !(limit > 0) || $("#autoorder_part:visible:checked").length) return 0;
 
-			var text = $.trim(e.text());
+			var text = $.trim(evt.e.text());
 			if (text == "有") return 2;
-
-			return parseInt(text) >= limit ? 2 : 1;
+			evt.result = parseInt(text) >= limit ? 2 : 1;
+			return evt.result;
 		});
 	})();
 
@@ -2867,7 +3083,7 @@ function initTicketQuery() {
 		var toCode = $("#toStation");
 		var to = $("#toStationText");
 
-		from.css("width", "50px").after("<input type='button' value='<->' class='lineButton' title='交换出发地和目的地' id='btnExchangeStation' />");
+		from.css("width", "50px").after("<input style='margin-right:0;' type='button' value='<->' class='lineButton' title='交换出发地和目的地' id='btnExchangeStation' />");
 		$("#btnExchangeStation").click(function () {
 			var f1 = fromCode.val();
 			var f2 = from.val();
@@ -2886,31 +3102,22 @@ function initTicketQuery() {
 		var fromText = $("#fromStationText");
 		var toText = $("#toStationText");
 
-		$("#filterFunctionRow").append("<label style='font-weight:bold;color:red;margin-left:10px;'><input type='checkbox' id='closeFuseSearch'>过滤发站不完全匹配的车次</label><label style='font-weight:bold;color:red;margin-left:10px;'><input type='checkbox' id='closeFuseSearch1'>过滤到站不完全匹配的车次</label>");
+		$("#filterFunctionRow").append("<li><label style='font-weight:bold;color:#ff2020;'><input type='checkbox' id='closeFuseSearch'>过滤发站不完全匹配的车次</label></li><li><label style='font-weight:bold;color:#ff2020;'><input type='checkbox' id='closeFuseSearch1'>过滤到站不完全匹配的车次</label></li>");
 		$("#closeFuseSearch, #closeFuseSearch1").parent().attr("title", '默认情况下，例如查找‘杭州’时，会包括‘杭州南’这个车站。勾选此选项，将会在搜索‘杭州’的时候，过滤那些不完全一致的车站，如‘杭州南’。');
 
-		function getStationName() {
-			var txt = $.trim(this.text()).split(/\s/);
-			return txt[0];
-		}
-
-		checkTicketsQueue.push(function (result) {
-			if (document.getElementById("closeFuseSearch").checked) {
-				var fs = getStationName.call(this.find("td:eq(1)"));
-				if (fs != fromText.val()) {
-					this.hide();
-					return 0;
-				}
+		$("table.obj tr").live("checkTicketRow", function (evt) {
+			if (document.getElementById("closeFuseSearch").checked && evt.fromStation != fromText.val()) {
+				evt.row.hide();
+				evt.result = 0;
+				return false;
 			}
-			if (document.getElementById("closeFuseSearch1").checked) {
-				var fs = getStationName.call(this.find("td:eq(2)"));
-				if (fs != toText.val()) {
-					this.hide();
-					return 0;
-				}
+			if (document.getElementById("closeFuseSearch1").checked && evt.toStation != toText.val()) {
+				evt.row.hide();
+				evt.result = 0;
+				return false;
 			}
 
-			return result;
+			return true;
 		});
 	})();
 
@@ -2922,7 +3129,7 @@ function initTicketQuery() {
 	var time_server = null;
 
 	(function () {
-		$("#helpertooltable tr:last").before("<tr class='fish_sep'><td class='name'>保持在线</td><td colspan='3'>助手每隔十分钟会帮你刷新存在感防止挂机而掉线的啦。。。。。最后刷新时间：<strong id='lastonlinetime'>无</strong></td></tr>");
+		$("#queryUtility").after("<tr class='fish_sep'><td class='name'>保持在线</td><td colspan='3'>助手每隔十分钟会帮你刷新存在感防止挂机而掉线的啦。。。。。最后刷新时间：<strong id='lastonlinetime'>无</strong></td></tr>");
 		var label = $("#lastonlinetime");
 
 		function online() {
@@ -2949,7 +3156,7 @@ function initTicketQuery() {
 			var now = new Date();
 			time_server = new Date();
 			time_server.setTime(now.getTime() - time_offset);
-			document.getElementById("chkSmartSpeed").disabled = time_server.getFullYear() < 2000;
+			$("#chkSmartSpeed, .needServerTime").attr("disabled", time_server.getFullYear() < 2000);
 
 			dom.eq(0).html(utility.formatTime(time_server));
 			dom.eq(1).html(utility.formatTime(now));
@@ -2966,8 +3173,8 @@ function initTicketQuery() {
 	//#region 车票模式配置
 
 	(function () {
-		$("#helpertooltable tr:first").before("<tr class='fish_sep caption'><td class='name' colspan='4'>出行模式</td></tr>\
-<tr class='fish_sep'><td colspan='2'><select id='profilelist'><option value=''>===选择一个出行模式===</option></select><button id='profile_save' class='fish_button'>保存</button><button id='profile_add' class='fish_button'>另存</button><button id='profile_delete' class='fish_button'>删除</button><button id='profile_reset' class='fish_button'>重置所有选项</button></td><td colspan='2'>出行模式可以帮你快速的保存一系列设置，如联系人、车次、席别、黑名单和白名单</td>\
+		$("#helpertooltable tr:first").before("<tr class='fish_sep fish_area'><td colspan='4'>出行模式</td></tr>\
+<tr class='fish_sep'><td colspan='2'><select id='profilelist'><option value=''>==选择一个出行模式==</option></select><button id='profile_save' class='fish_button'>保存</button><button id='profile_add' class='fish_button'>另存</button><button id='profile_delete' class='fish_button'>删除</button><button id='profile_reset' class='fish_button'>重置所有选项</button></td><td colspan='2' style='white-space:nowrap;'>出行模式可以帮你快速的保存一系列设置，如联系人、车次、席别、黑名单和白名单</td>\
 </tr>\
 ");
 		var list = (window.localStorage["profilelist"] || "").split("\t");
@@ -3025,12 +3232,12 @@ function initTicketQuery() {
 		});
 
 		function loadProfile(name) {
-			return $.parseJSON(window.localStorage.getItem("profile_" + name));
+			return utility.parseJSON(window.localStorage.getItem("profile_" + name));
 		}
 
 		function saveProfile(name, profile) {
 			if (!profile) window.localStorage.removeItem(name);
-			else window.localStorage.setItem("profile_" + name, $.toJSON(profile));
+			else window.localStorage.setItem("profile_" + name, utility.toJSON(profile));
 		}
 
 		function generateProfile() {
@@ -3098,7 +3305,7 @@ function initTicketQuery() {
 				});
 			}
 
-			utility.notifyOnTop("已加载出行模式");
+			utility.notify("已加载出行模式");
 		}
 
 	})();
@@ -3106,16 +3313,316 @@ function initTicketQuery() {
 
 	//#endregion
 
+	//#region 查询的时间记录
+
+	(function () {
+		var lastTime = null;
+		var title = $(".cx_titler");
+
+		$(document).ajaxComplete(function (e, xhr, o) {
+			if (o.url.indexOf("method=queryLeftTicket") == -1 || xhr.responseText == "-1") return;
+
+			var age = xhr.getResponseHeader("Age");
+			var xcache = xhr.getResponseHeader("X-Cache") || "";
+			var date = xhr.getResponseHeader("Date") || "<未知>";
+			var dateStr = "<未知>";
+
+			if (date) {
+				date = new Date(date);
+				dateStr = utility.formatTime(date);
+			}
+
+			var isCache = (age == 1 || date == lastTime || xcache.indexOf("HIT") != -1);
+			var html = "数据时间：" + dateStr;
+			title.html((isCache ? "这可能是缓存的说……整点请使用『等待整点』。。。" : "") + html);
+			if (isCache) {
+				title.addClass("warning");
+			} else {
+				title.removeClass("warning");
+			}
+		});
+	})();
+
+	//#endregion
+
+	//#region 显示实际票数
+
+	(function () {
+		function displayRealTicket(evt) {
+			var rows = $("table.obj tr[result]:visible");
+
+			rows.each(function () {
+				var r = $(this);
+				if (r.attr("result") == 0) return true;
+				var data = r.find(orderButtonClass)[0].onclick + '';
+				var ticketInfo = utility.getTicketInfo(data);
+
+				$.each(ticketInfo, function (i, v) {
+					var td = r.find("td[scode=" + i + "]");
+					if ($.trim(td.text()) == "有") td.html(v);
+				});
+			});
+		}
+
+		$(document).bind("checkedTicket", displayRealTicket);
+	})();
+
+	//#endregion
+
+	//#region 自动变更车次类型
+
+	(function () {
+		var html = [];
+		var checks = $("input[name=trainClassArr]");
+		html.push("<tr class='fish_sep' id='trAutoChangeClass'><td class='name'><label><input type='checkbox' name='autoChangeTrainClass' id='autoChangeTrainClass' /> 更改列车类型</label></td><td>");
+		checks.each(function () {
+			if (this.value == "QB") return;
+
+			html.push("<label style='margin-right:10px;'><input type='checkbox' id='unwantClass_" + this.value + "' name='unwantClass' value='" + this.value + "' /> " + $(this).parent().text() + "</label>");
+		});
+		html.push("</td><td colspan='2'>选择肯定不要的列车类型，每次查询后小的会随机更改查询条件，好查得更及时~</td></tr>");
+
+		$("#viewHelper").nextUntil(".fish_area").last().after(html.join(""));
+
+		utility.reloadPrefs($("#trAutoChangeClass"), "");
+		var checksClone = $("#trAutoChangeClass :checkbox[name=unwantClass]");
+
+		de.bind("checkedTicket", function () {
+			checks[0].checked = false;
+
+			if (!document.getElementById("autoChangeTrainClass").checked) return;
+
+			for (var i = 0; i < checksClone.length; i++) {
+				var obj = checksClone[i];
+				if (!obj.checked) {
+					checks[i + 1].checked = true;
+				} else {
+					checks[i + 1].checked = Math.random() >= 0.5;
+				}
+			}
+		});
+	})();
+
+	//#endregion
+
 	utility.reloadPrefs($("tr.append_row"), "ticket_query");
 	//完成初始化
 	initialized = true;
-	parent.$("#main").css("height", ($(document).height() + 300) + "px");
-	parent.window.setHeight(parent.window);
+}
+
+function initAutoPreSubmitOrder() {
+	$(document).bind("validTicketsFound", function (e) {
+		if (typeof (seatLevelOrder) == "undefined" || (e.result != null && !e.result) || !(document.getElementById("swAutoBook").checked || document.getElementById("swOnlyValid").checked)) return;
+
+		console.log("[INFO] 正在按照预定的席别和车次优选");
+		if (document.getElementById("swOnlyValid").checked)
+			e.result = false;
+
+		function clickRow(row) {
+			if (document.getElementById("swAutoBook").checked) {
+				e.result = false;
+
+				if (document.getElementById("autoBookTip").checked) {
+					window.localStorage["bookTip"] = 1;
+				}
+				row.find(orderButtonClass).click();
+
+				return false;
+			} else {
+				e.result = true;
+				return true;
+			}
+		}
+
+		if (!seatLevelOrder || !seatLevelOrder.length) {
+			//没有席别优先级，那选第一个
+			for (var idx in list_autoorder.datalist) {
+				var code = list_autoorder.datalist[idx];
+				var reg = utility.getRegCache(code);
+				var row = $.first(validRows, function (i, v) {
+					if (reg.test(i)) return v;
+				});
+
+				if (row) {
+					return clickRow(row);
+				}
+			};
+		} else {
+			console.log("按席别优先选择-车次过滤");
+			var trains = $.makeArray($("#gridbox tr[result=2]"));
+
+			var trainfiltered = [];
+			for (var idx in list_autoorder.datalist) {
+				//对车次进行过滤并按优先级排序
+				var rule = list_autoorder.datalist[idx];
+				var ruleTester = utility.getRegCache(rule);
+				for (var i = trains.length - 1; i >= 0; i--) {
+					var self = $(trains[i]);
+					var code = self.attr("tcode");
+
+					if (ruleTester.test(code)) {
+						trainfiltered.push(self);
+						trains.splice(i, 1);
+					}
+				}
+			}
+			if (document.getElementById("autoorder_method").selectedIndex == 0) {
+				$.each(seatLevelOrder, function () {
+					var scode = this;
+					for (var i in trainfiltered) {
+						var t = trainfiltered[i];
+						if (t.find("td[scode=" + this + "][result=2]").length) {
+							ticketValid = true;
+							var tcode = scode == "empty" ? "1" : scode;
+
+							window.localStorage.setItem("autoSelect_preSelectSeatType", tcode);
+							$("#preSelectSeat").val(tcode)
+
+							return clickRow(t);
+						}
+					}
+					return true;
+				});
+			} else {
+				//车次优先
+				$.each(trainfiltered, function () {
+					var t = this;
+					for (var i in seatLevelOrder) {
+						var scode = seatLevelOrder[i];
+						if (t.find("td[scode=" + scode + "][result=2]").length) {
+							ticketValid = true;
+							var tcode = scode == "empty" ? "1" : scode;
+
+							window.localStorage.setItem("autoSelect_preSelectSeatType", tcode);
+							$("#preSelectSeat").val(tcode)
+
+							return clickRow(t);;
+						}
+					}
+					return true;
+				});
+			}
+		}
+
+	});
+
+	console.log("[INFO] 席别和车次优选初始化完成");
+}
+
+function dgFilterQuery() {
+	var dCheck = $("input:checkbox[name=trainClassArr][value=D]");
+	var qbCheck = $("input:checkbox[name=trainClassArr][value=QB]");
+	var otCheck = $("input:checkbox[name=trainClassArr][value!=QB][value!=D]");
+	dCheck.closest("li").hide().after("<li><label title='助手添加的动车过滤框，不包含高铁~'><input checked='checked' type='checkbox' name='advDgFilter' id='advDgFilterD' /> 动车(D)</label></li><li><label title='助手添加的动车过滤框，不包含动车~'><input type='checkbox' checked='checked' name='advDgFilter' id='advDgFilterG' /> 高铁(G)</label></li>");
+
+	var filter_d = document.getElementById("advDgFilterD");
+	var filter_g = document.getElementById("advDgFilterG");
+	var advFilterCb = $("input:checkbox[name=advDgFilter]");
+
+	$("input:checkbox[name=trainClassArr]").unbind("click");
+	otCheck.add(dCheck).change(function () {
+		var isAllSelected = filter_d.checked && filter_g.checked && otCheck.filter(":not(:checked)").length == 0;
+		if (isAllSelected == qbCheck[0].checked) return;
+
+		qbCheck[0].checked = isAllSelected;
+		qbCheck.change();
+	});
+	qbCheck.click(function () {
+		if (this.checked) {
+			otCheck.add(advFilterCb).filter(":not(:checked)").attr("checked", true).change();
+		} else {
+			otCheck.add(advFilterCb).filter(":checked").attr("checked", false).change();
+		}
+	});
+	utility.reloadPrefs($("#advDgFilterD, #advDgFilterG").change(function () {
+		dCheck[0].checked = filter_d.checked || filter_g.checked;
+		dCheck.change();
+	}).parent());
+
+
+	//全部的取消和勾选
+	qbCheck.click(function () {
+		filter_d.checked = filter_g.checked = this.checked;
+	});
+
+	$("table.obj tr").live("checkTicketRow", function (evt) {
+		if (!(filter_d.checked ^ filter_g.checked)) return;
+
+		if ((!filter_d.checked && evt.trainCode[0] == 'D') || (!filter_g.checked && evt.trainCode[0] == 'G')) {
+			evt.row.hide();
+			return 0;
+		}
+	});
+
+	//出行时间过滤
+	$("#viewFilter").nextUntil(".fish_area").last().after('<tr class="fish_sep" id="timeFilter"><td class="name"><label><input type="checkbox" id="swEnableFromFilter" checked="checked"/>出发时间</label</td><td><select id="timeFilterFrom1"></select> 至 <select id="timeFilterFrom2"></select></td><td class="name"><label><input type="checkbox" id="swEnableToFilter" checked="checked"/>到达时间</label></td><td><select id="timeFilterTo1"></select> 至 <select id="timeFilterTo2"></select></td></tr>');
+	var tff = document.getElementById("timeFilterFrom1");
+	var tft = document.getElementById("timeFilterFrom2");
+	var ttf = document.getElementById("timeFilterTo1");
+	var ttt = document.getElementById("timeFilterTo2");
+	var swf = document.getElementById("swEnableFromFilter");
+	var swt = document.getElementById("swEnableToFilter");
+
+	for (var i = 0; i < 25; i++) {
+		var txt = (i < 10 ? "0" : "") + i + ":00";
+		tff.options[i] = new Option(txt, i + 1);
+		tft.options[i] = new Option(txt, i + 1);
+		ttf.options[i] = new Option(txt, i + 1);
+		ttt.options[i] = new Option(txt, i + 1);
+	}
+	ttt.selectedIndex = tft.selectedIndex = 24;
+	utility.reloadPrefs($("#timeFilter"));
+	$("table.obj tr").live("checkTicketRow", function (evt) {
+		var fromTime = parseInt(evt.fromTime.split(":")[0]);
+		var toTime = parseInt(evt.toTime.split(":")[0]);
+
+		if ((swf.checked && (fromTime < tff.selectedIndex || fromTime >= tft.selectedIndex)) || (swt.checked && (toTime < ttf.selectedIndex || toTime >= ttt.selectedIndex))) {
+			evt.row.hide();
+			evt.result = 0;
+			return 0;
+		}
+	});
+
+	//格式化文字
+	$("table.obj tr").live("checkTicketRow", function (evt) {
+		var td = evt.row.find("td:eq(1), td:eq(2)");
+		td.each(function () {
+			var cell = $(this);
+			var flag = (/<img[^>]+>(\s|&nbsp;)?/i.exec(cell.html()) || [])[0] || "";
+			cell.html(flag + $.trim(cell.text()).split(/\s+/).join("<br />"));
+		});
+	});
+	//修正列宽
+	mygrid.setColWidth(0, 60);
+	mygrid.setColWidth(1, 70);
+	mygrid.setColWidth(2, 70);
+	for (var i = 4; i < 15; i++) mygrid.setColWidth(i, 50);
+
+	//不滚动。
+	(function () {
+		var html = "<tr class='fish_sep' id='autoExpandResultRow'><td class='name'>自动展开查询结果</td><td colspan='3'><label><input type='checkbox' id='autoExpandResult' name='autoExpandResult' /> 如果查询结果列表过长，那么自动展开查询结果列表</label></td></tr>";
+		$("#autoFill").before(html);
+		utility.reloadPrefs($("#autoExpandResultRow"));
+		$("#gridbox").css("height", "auto");
+
+		var main = $("div.objbox");
+		var table = main.find(">div");
+		var ckb = document.getElementById("autoExpandResult");
+		$(document).bind("checkedTicket", function (evt) {
+			if (!ckb.checked) {
+				main.css("height", "300px");
+			} else {
+				main.css("height", (Math.max(table.height(), 300) + 10) + "px");
+			}
+		});
+
+	})();
 }
 
 //#endregion
 
 //#region 自动提交订单
+
 
 function initDirectSubmitOrder() {
 	//return;
@@ -3204,7 +3711,7 @@ function initDirectSubmitOrder() {
 	$("#orderForm").submit(function () {
 		if (!document.getElementById("autoorder").checked || isCanAutoSubmitOrder().length || !($("#preSelectSeat").val())) return true;
 		showStatus();
-		utility.notifyOnTop("开始自动提交预定订单！");
+		utility.notify("开始自动提交预定订单！");
 		setCurOperationInfo(true, "正在自动提交订单");
 
 		//确定乘客
@@ -3225,7 +3732,7 @@ function initDirectSubmitOrder() {
 		utility.post(form.attr("action"), form.serialize(), "text", function (html) {
 			if (html.indexOf("您还有未处理") != -1) {
 				hideStatus();
-				utility.notifyOnTop("您还有未处理订单！");
+				utility.notify("您还有未处理订单！");
 				redirectToNotCompleteQuery();
 				return;
 			}
@@ -3233,7 +3740,7 @@ function initDirectSubmitOrder() {
 			setTipMessage("正在分析内容");
 			getOrderFormInfo(html);
 		}, function () {
-			utility.notifyOnTop("提交预定请求发生错误，稍等重试！");
+			utility.notify("提交预定请求发生错误，稍等重试！");
 			utility.delayInvoke(counter, function () { $("#orderForm").submit(); }, 2000);
 		});
 
@@ -3293,14 +3800,14 @@ function initDirectSubmitOrder() {
 
 	function checkOrderInfo() {
 		setCurOperationInfo(true, "正在检测订单状态....");
-		utility.notifyOnTop("开始自动提交订单！");
+		utility.notify("开始自动提交订单！");
 		console.log(data);
 
 		utility.post("confirmPassengerAction.do?method=checkOrderInfo&rand=" + getVcCode(), formData.join("&") + "&randCode=" + getVcCode(), "json", function (data) {
 			console.log(data);
 			if ('Y' != data.errMsg || 'N' == data.checkHuimd || 'N' == data.check608) {
 				if (data.errMsg && data.errMsg.indexOf("验证码") != -1) {
-					utility.notifyOnTop("验证码不正确。请输入验证码！");
+					utility.notify("验证码不正确。请输入验证码！");
 					setTipMessage("请重新输入验证码。");
 					reloadCode();
 				} else {
@@ -3337,9 +3844,9 @@ function initDirectSubmitOrder() {
 		};
 		utility.get("/otsweb/order/confirmPassengerAction.do?method=getQueueCount", queryLeftData, "json", function (data) {
 			if (data.op_2) {
-				//utility.notifyOnTop("排队人数过多，系统禁止排队，稍等重试。要重新查询，请刷新页面！");
-				setTipMessage("排队人数过多 (人数=" + data.count + ")");
-				setCurOperationInfo(true, "排队人数过多");
+				//utility.notify("排队人数过多，系统禁止排队，稍等重试。要重新查询，请刷新页面！");
+				setTipMessage("抽奖人数过多 (人数=" + data.count + ")");
+				setCurOperationInfo(true, "抽奖人数过多");
 				utility.delayInvoke(counter, queryQueueInfo, 500);
 			} else {
 				submitOrder();
@@ -3374,8 +3881,8 @@ function initDirectSubmitOrder() {
 
 				if (msg == "Y") {
 					setTipMessage("订单提交成功");
-					setCurOperationInfo(false, "订单提交成功，请等待排队完成。");
-					utility.notifyOnTop("订单提交成功，请等待排队完成。");
+					setCurOperationInfo(false, "彩票提交成功，请等待开奖。");
+					utility.notify("彩票提交成功，请等待开奖。");
 
 					redirectToNotCompleteQuery();
 
@@ -3412,7 +3919,7 @@ function initDirectSubmitOrder() {
 
 					setTipMessage(msg);
 					setCurOperationInfo(false, "未知错误：" + msg + "，请告知作者。");
-					utility.notifyOnTop("未知错误：" + msg + "，请告知作者。");
+					utility.notify("未知错误：" + msg + "，请告知作者。");
 
 					if (document.getElementById("autoorder_autocancel").checked) {
 						document.getElementById("autoorder").checked = false;
@@ -3431,7 +3938,7 @@ function initDirectSubmitOrder() {
 		if (document.getElementById("autoorder").checked) {
 			var r = isCanAutoSubmitOrder();
 			if (r.length) {
-				utility.notifyOnTop("您选择了自动提交订单，但是信息没有设置完整！请" + r.join("、") + "！");
+				utility.notify("您选择了自动提交订单，但是信息没有设置完整！请" + r.join("、") + "！");
 			}
 		}
 	}, 30 * 1000);
@@ -3445,9 +3952,16 @@ function initDirectSubmitOrder() {
 //#region -----------------自动登录----------------------
 
 function initLogin() {
+	utility.checkCompatible();
 
 	//启用日志
 	utility.enableLog();
+
+	//清除联系人缓存
+	var tw = utility.getTopWindow();
+	if (tw.utility.allPassengers) {
+		tw.utility.allPassengers = null;
+	}
 
 	//如果已经登录，则自动跳转
 	utility.unsafeCallback(function () {
@@ -3471,7 +3985,7 @@ function initLogin() {
 		$("#loginForm table tr:first td:last").append("<a href='https://dynamic.12306.cn/otsweb/' target='_blank' style='font-weight:bold;color:red;'>点击全屏订票</a>");
 		if (!utility.getPref("login.fullscreenAlert")) {
 			utility.setPref("login.fullscreenAlert", 1);
-			utility.notifyOnTop("强烈建议你点击界面中的『点击全屏订票』来全屏购票，否则助手有些提示消息您将无法看到！");
+			utility.notify("强烈建议你点击界面中的『点击全屏订票』来全屏购票，否则助手有些提示消息您将无法看到！");
 		}
 	}
 
@@ -3485,14 +3999,14 @@ function initLogin() {
 		"<li class='fish_clock' id='countEle' style='font-weight:bold;'>等待操作</li>" +
 		"<li style='color:green;'><strong>操作信息</strong>：<span>休息中</span></li>" +
 		"<li style='color:green;'><strong>最后操作时间</strong>：<span>--</span></li>" +
-		"<li> <a href='javascript:;' class='configLink' tab='tabLogin'>登录设置</a> | <a href='http://www.fishlee.net/soft/44/' style='color:blue;' target='_blank'>助手主页</a></li><li><a href='http://www.fishlee.net/soft/44/announcement.html' style='color:blue;' target='_blank'>免责声明</a> | <a href='" + utility.getUpdateUrl() + "' target='_blank' style='style='color:purple;''>下载新版</a> | <a style='font-weight:bold;color:red;' href='http://www.fishlee.net/soft/44/donate/index.html' target='_blank'>捐助作者</a></li>" +
-		'<li id="enableNotification"><input type="button" id="enableNotify" onclick="$(this).parent().hide();window.webkitNotifications.requestPermission();" value="点击启用桌面通知" style="line-height:25px;padding:5px;" /></li><li style="padding-top:10px;line-height:normal;color:gray;">请<strong style="color: red;">最后输验证码</strong>，输入完成后系统将自动帮你提交。登录过程中，请勿离开当前页。如系统繁忙，会自动重新刷新验证码，请直接输入验证码，输入完成后助手将自动帮你提交。</li>' +
+		"<li><a href='http://www.fishlee.net/soft/44/' style='color:blue;' target='_blank'>助手主页</a> | <a href='http://t.qq.com/ccfish/' title='此乃腾讯微博！或者在新浪微博上 @imcfish？可惜偶不怎么用新浪微博……' style='color:blue;' target='_blank'>微博关注</a> | <a href='http://bbs.fishlee.net/' target='_blank' style='color:red;'>助手论坛</a></li><li><a href='http://www.fishlee.net/soft/44/announcement.html' style='color:blue;' target='_blank'>免责声明</a> | <a href='" + utility.getUpdateUrl() + "' target='_blank' style='style='color:purple;''>下载新版</a> | <a style='font-weight:bold;color:red;' href='http://www.fishlee.net/soft/44/donate.html' target='_blank'>捐助作者</a></li>" +
+		'<li style="padding-top:10px;line-height:normal;color:gray;">请<strong style="color: red;">最后输验证码</strong>，输入完成后系统将自动帮你提交。登录过程中，请勿离开当前页。如系统繁忙，会自动重新刷新验证码，请直接输入验证码，输入完成后助手将自动帮你提交。</li>' +
 		"</ul>" +
 		"</div>" +
 		"</div>");
 
 	var html = [];
-	html.push("<div class='outerbox' style='margin:15px;'><div class='box'><div class='title'>小提示</div><div style='padding:10px;'>");
+	html.push("<div class='outerbox' style='margin:20px 0;'><div class='box' style='margin:0;width:auto;'><div class='title'>12306订票助手 - 小提示</div><div style='padding:10px;'>");
 	html.push("<table><tr><td style='width:33%;font-weight:bold;background-color:#f5f5f5;'><strong>您还可以通过以下网址访问订票网站：</strong></td><td style='width:33%;font-weight:bold;background-color:#f5f5f5;'>助手运行常见问题</td><td style='font-weight:bold;background-color:#f5f5f5;'>版本信息</td></tr>");
 	html.push("<tr><td><ul><li style='list-style:disc inside;'><a href='https://www.12306.cn/otsweb/' target='blank'>https://www.12306.cn/otsweb/</a></li>");
 	html.push("<li style='list-style:disc inside;'><a href='https://dynamic.12306.cn/otsweb/' target='blank'>https://dynamic.12306.cn/otsweb/</a></li><li style='list-style:disc inside;'><a href='http://dynamic.12306.cn/otsweb/' target='blank'>http://dynamic.12306.cn/otsweb/</a></li>");
@@ -3529,21 +4043,19 @@ function initLogin() {
 	utility.reloadPrefs($("#loginForm td:last"));
 	$("#keepInfo").change(function () {
 		if (!this.checked) {
-			if (localStorage.getItem("__un") != null) {
-				localStorage.removeItem("__un");
+			if (localStorage.getItem("__up") != null) {
 				localStorage.removeItem("__up");
-				alert("保存的密码已经删除！");
+				alert("保存的密码！");
 			}
+		}
+		if (this.checked) {
+			alert("警告：此选项可能会导致您的密码泄漏喔。请确认你正在操作的电脑完全是你的，并且她木有中毒神马的……");
 		}
 	});
 	//注册判断
 	form.submit(function () {
 		utility.setPref("_sessionuser", $("#UserName").val());
 	});
-
-	if (!window.webkitNotifications || window.webkitNotifications.checkPermission() == 0) {
-		$("#enableNotification").remove();
-	}
 
 	var tip = $("#tipScript li");
 	var count = 1;
@@ -3562,7 +4074,7 @@ function initLogin() {
 	}
 
 	function getLoginRandCode() {
-		setCurOperationInfo(true, "正在获得登录随机码");
+		setCurOperationInfo(true, "正在抽摇摇乐……");
 
 		$.ajax({
 			url: "/otsweb/loginAction.do?method=loginAysnSuggest",
@@ -3575,7 +4087,7 @@ function initLogin() {
 					setTipMessage("错误：" + json.randError);
 					utility.delayInvoke("#countEle", getLoginRandCode, utility.getLoginRetryTime());
 				} else {
-					setTipMessage("登录随机码 -&gt; " + json.loginRand);
+					setTipMessage("登录幸运数字 - " + json.loginRand);
 					$("#loginRand").val(json.loginRand);
 					submitForm();
 				}
@@ -3603,9 +4115,9 @@ function initLogin() {
 		if (!data["loginUser.user_name"] || !data["user.password"] || !data.randCode || data.randCode.length != 4/* || (utility.regInfo.bindAcc && utility.regInfo.bindAcc != data["loginUser.user_name"])*/)
 			return;
 
+		utility.setPref("__un", data["loginUser.user_name"]);
 		if ($("#keepInfo")[0].checked) {
-			utility.setPref("__un", data["loginUser.user_name"]);
-			utility.setPref("__up", data["user.password"])
+			utility.setPref("__up", data["user.password"]);
 		}
 		setCurOperationInfo(true, "正在登录中……");
 		$.ajax({
@@ -3630,8 +4142,14 @@ function initLogin() {
 					setCurOperationInfo(false, "请重新输入。");
 					stopLogin();
 				} else if (html.indexOf("欢迎您登录") != -1) {
-					utility.notifyOnTop('登录成功，开始查询车票吧！');
-					window.location.href = "https://dynamic.12306.cn/otsweb/order/querySingleAction.do?method=init";
+					utility.notify('登录成功，开始查询车票吧！');
+					//搜狗高速浏览器模拟点击不行，换个方式
+					var form = parent.document.getElementById("loginsubmit");
+					if (form == null) {
+						parent.$("body").append("<form action='/otsweb/order/querySingleAction.do' target='main' method='get' id='loginsubmit'><input type='hidden' name='method' value='init' /></form>");
+						form = parent.document.getElementById("loginsubmit");
+					}
+					setTimeout(function () { form.submit(); }, 2000);
 				} else {
 					setTipMessage(msg);
 					utility.delayInvoke("#countEle", getLoginRandCode, utility.getLoginRetryTime());
@@ -3654,12 +4172,12 @@ function initLogin() {
 	function relogin() {
 		if (inRunning) return;
 
-		var user = $("#UserName").val();
-		if (!user) return;
-		if (utility.regInfo.bindAcc && utility.regInfo.bindAcc.length && utility.regInfo.bindAcc[0] && $.inArray(user, utility.regInfo.bindAcc) == -1 && utility.regInfo.bindAcc[0] != "*") {
-			alert("很抱歉，12306订票助手的授权许可已绑定至【" + utility.regInfo.bindAcc.join() + "】，未授权用户，助手停止运行，请手动操作。\n您可以在登录页面下方的帮助区点击【重新注册】来修改绑定。");
-			return;
-		}
+		//var user = $("#UserName").val();
+		//if (!user) return;
+		//if (utility.regInfo.bindAcc && utility.regInfo.bindAcc.length && utility.regInfo.bindAcc[0] && $.inArray(user, utility.regInfo.bindAcc) == -1 && utility.regInfo.bindAcc[0] != "*") {
+		//	alert("很抱歉，12306订票助手的授权许可已绑定至【" + utility.regInfo.bindAcc.join() + "】，未授权用户，助手停止运行，请手动操作。\n您可以在登录页面下方的帮助区点击【重新注册】来修改绑定。");
+		//	return;
+		//}
 
 		count++;
 		utility.setPref("_sessionuser", $("#UserName").val());
@@ -3685,12 +4203,11 @@ function initLogin() {
 	}
 
 	var kun = utility.getPref("__un");
-	var kup = utility.getPref("__up");
-	if (kun && kup) {
+	if (kun) {
 		$("#UserName").val(kun);
-		$("#password").val(kup);
-		$("#randCode")[0].focus();
 	}
+	$("#password").val(utility.getPref("__up") || "");
+
 	$("#randCode").keyup(function (e) {
 		if (!$("#autoLogin")[0].checked) return;
 
@@ -3710,7 +4227,7 @@ function initLogin() {
 	html.push(utility.formatDate(addDays.call(curDate, 19)));
 	html.push("</u>】日车票；代售点和车站提前18天，本日起售【<u>");
 	html.push(utility.formatDate(addDays.call(curDate, 17)));
-	html.push("</u>】日车票。<br />【<a href='javascript:;' id='querySaleDate'>根据乘车日期推算起售日期</a>】【<a href='http://www.12306.cn/mormhweb/zxdt/tlxw_tdbtz53.html' target='_blank'>以相关公告、车站公告为准</a>】");
+	html.push("</u>】日车票。<br />【<a href='javascript:;' id='querySaleDate'>根据乘车日期推算起售日期</a>】【<a href='http://www.12306.cn/mormhweb/zxdt/tlxw_tdbtz56.html' target='_blank'>以相关公告、车站公告为准</a>】");
 
 	$("div.enter_from ul").append(html.join(""));
 
@@ -3735,7 +4252,7 @@ function initLogin() {
 function initPayOrder() {
 	//如果出错，自动刷新
 	if ($("div.error_text").length > 0) {
-		utility.notifyOnTop("页面出错，稍后自动刷新！");
+		utility.notify("页面出错，稍后自动刷新！");
 		setTimeout(function () { self.location.reload(); }, 3000);
 	}
 
@@ -3773,6 +4290,51 @@ function initPayOrder() {
 
 //#endregion
 
+//#region 高级查询
+
+function initAdvancedTicketQuery() {
+//	return;
+	$("div.cx_title_w").before("<div class='outerbox' style='width:99%;'><div class='box' id='advQuery'><div class='title'><big>12306订票助手 高级查询</big><div class='time-comp'><label><input type='checkbox' name='' id='' value='1' /> 启用高级查询功能</lable></div></div></div></div>");
+	var destContainer = $("#advQuery");
+
+//	if (utility.isDemoUser()) {
+//		destContainer.append("<div style=''></div>");
+//		return;
+//	}
+
+	var html = [];
+	html.push("<table class='gridtb'>\
+<tr>\
+<th>日期</th>\
+<th>车次</th>\
+<th>始发站</th>\
+<th>到达站</th>\
+<th>发时</th>\
+<th>到时</th>\
+<th>历时</th>\
+<th>商务</th>\
+<th>特等</th>\
+<th>一等</th>\
+<th>二等</th>\
+<th>高软</th>\
+<th>软卧</th>\
+<th>硬卧</th>\
+<th>软座</th>\
+<th>硬座</th>\
+<th>无座</th>\
+<th>其它</th>\
+<th class='last'>操作</th>\
+</tr>\
+</table>");
+
+	destContainer.append(html.join(""));
+
+
+}
+
+//#endregion
+
+
 //#region 更新专用检测代码
 
 if (location.pathname == "/otsweb/" || location.pathname == "/otsweb/main.jsp") {
@@ -3780,7 +4342,7 @@ if (location.pathname == "/otsweb/" || location.pathname == "/otsweb/main.jsp") 
 		//firefox 专用检测代码
 		GM_xmlhttpRequest({
 			method: "GET",
-			url: "http://static.liebao.cn/_softupdate/44/version.js",
+			url: "http://www.fishlee.net/service/update/44/version.js",
 			onload: function (o) {
 				eval(o.responseText);
 
@@ -3796,13 +4358,13 @@ if (location.pathname == "/otsweb/" || location.pathname == "/otsweb/main.jsp") 
 
 				console.log("[INFO] 更新检查：当前助手版本=" + version + "，新版本=" + version_12306_helper);
 				if (compareVersion(version, version_12306_helper) < 0 && confirm("订票助手已发布新版 【" + version_12306_helper + "】，为了您的正常使用，请及时更新!是否立刻更新？\n\n本次更新内容如下：\n" + version_updater.join("\n"))) {
-					GM_openInTab("http://static.liebao.cn/_softdownload/12306_ticket_helper.user.js", true, true);
+					GM_openInTab("http://www.fishlee.net/Service/Download.ashx/44/47/12306_ticket_helper.user.js", true, true);
 				}
 			}
 		});
 	} else {
 		unsafeInvoke(function () {
-			$("body").append('<iframe id="checkVersion" width="0" height="0" style="visibility:hidden;" src="http://static.liebao.cn/content/scriptProxy.html?script=http://static.liebao.cn/content/images/apps/cn12306/checkVersion.js&v=' + window.helperVersion + '"></iframe>');
+			$("body").append('<iframe id="checkVersion" width="0" height="0" style="visibility:hidden;" src="http://static.fishlee.net/content/scriptProxy.html?script=http://static.fishlee.net/content/images/apps/cn12306/checkVersion.js&v=' + window.helperVersion + '"></iframe>');
 		});
 	}
 }
@@ -3823,3 +4385,4 @@ function compareVersion(v1, v2) {
 }
 
 //#endregion
+
